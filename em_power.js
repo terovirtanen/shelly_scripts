@@ -12,6 +12,9 @@ let timerhanlde = null;
 // A remote Shelly abstraction Call an RPC method on the remote Shelly
 let RemoteShelly = {
   _cb: function (result, error_code, error_message, callback) {
+	if (result === undefined) {
+		return;
+	}
     let rpcResult = JSON.parse(result.body);
     let rpcCode = result.code;
     let rpcMessage = result.message;
