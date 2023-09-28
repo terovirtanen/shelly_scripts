@@ -1,5 +1,5 @@
 let CONFIG = {
-	em_ip: "192.168.100.100",
+	em_ip: "192.168.100.46",
 	key_total: "EM_TOTAL", 
 	key_total_ret: "EM_TOTAL_RET", 
 	key_total_store_datetime: "EM_STORETIME", 
@@ -141,10 +141,7 @@ function callGetTemperature(id) {
 		else if (temp > max_temp) {
 			switchVastus(false); 
 		} 
-		else {
-			callEmTotal({"temp_ylakierto": temp})
-		}
-		
+		callEmTotal({"temp_ylakierto": temp})
 	},
 	null
   );
