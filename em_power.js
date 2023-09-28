@@ -1,5 +1,5 @@
 let CONFIG = {
-	em_ip: "192.168.100.46",
+	em_ip: "192.168.100.100",
 	key_total: "EM_TOTAL", 
 	key_total_ret: "EM_TOTAL_RET", 
 	key_total_store_datetime: "EM_STORETIME", 
