@@ -9,7 +9,7 @@ let CONFIG = {
 	
 	debug: true,
 	
-	pannu_max_temperature: 65,
+	boiler_max_temperature: 65,
 }
 
 function debugPrint(line) {
@@ -18,6 +18,16 @@ function debugPrint(line) {
 	}
 }
 
+function switchPump(activate) {
+	debugPrint("activate pump " + activate);
+	
+	Shelly.call(
+	  "Switch.Set",
+	  { id: 0, on: activate },
+	  function (response, error_code, error_message) {}
+	);
+  };
+  
 function setTemperatureComponent() {
   Shelly.call(
     "Temperature.SetConfig",
@@ -42,58 +52,59 @@ function setTemperatureComponent() {
     function (response, error_code, error_message) {}
   );
 };
-setTemperatureComponent();
 
-function switchPump(activate) {
-  debugPrint("activate pump " + activate);
-  
-  Shelly.call(
-    "Switch.Set",
-    { id: 0, on: activate },
-    function (response, error_code, error_message) {}
-  );
-};
+let TemperatureHandler = (function () {
+	let boilerTemperature;
+	let downCirculationTemperature;
 
-function setPump(pannuTemperature, alakiertoTemperature) {
-	if (pannuTemperature > CONFIG.pannu_max_temperature) {
-		switchPump(true);
-	}
-	else if (pannuTemperature > alakiertoTemperature) {
-		switchPump(true);
-	}
-	else if (pannuTemperature < alakiertoTemperature) {
-		switchPump(false);		
-	};
-}
-
-function readTemperatureAlakierto(pannu_data){
-	Shelly.call(
-    "Temperature.GetStatus",
-    {"id":CONFIG.anturi_id_alakierto},
-	function (result, error_code, error_message, user_data) {
-		debugPrint(user_data.pannu_temperature);
-		debugPrint(result.tC);
-		setPump(user_data.pannu_temperature, result.tC);
-	},
-	pannu_data
-  );
-};
-
-function readTemperaturePannu() {
-	Shelly.call(
-    "Temperature.GetStatus",
-    {"id":CONFIG.anturi_id_pannu},
-	function (result, error_code, error_message, user_data) {
-//		debugPrint(result);
-		debugPrint(result.tC);
-		let pannuTemp = {
-			"pannu_temperature": result.tC
+	function setPump() {
+		if (boilerTemperature > CONFIG.boiler_max_temperature) {
+			switchPump(true);
+		}
+		else if (boilerTemperature > downCirculationTemperature) {
+			switchPump(true);
+		}
+		else if (boilerTemperature < downCirculationTemperature) {
+			switchPump(false);		
 		};
-		readTemperatureAlakierto(pannuTemp);
-	},
-	null
-  );
-};
+	}
+
+	function readTemperatureAlakierto(){
+		Shelly.call(
+		"Temperature.GetStatus",
+		{"id":CONFIG.anturi_id_alakierto},
+		function (result, error_code, error_message, user_data) {
+			debugPrint(user_data.pannu_temperature);
+			debugPrint(result.tC);
+			downCirculationTemperature = result.tC;
+			setPump();
+		},
+		null
+	  );
+	};
+	
+	function readTemperatureBoiler() {
+		Shelly.call(
+		"Temperature.GetStatus",
+		{"id":CONFIG.anturi_id_pannu},
+		function (result, error_code, error_message, user_data) {
+	//		debugPrint(result);
+			debugPrint(result.tC);
+			boilerTemperature = result.tC;
+			readTemperatureAlakierto();
+		},
+		null
+	  );
+	};
+	
+	return { // public interface
+		refresh: function() {
+			readTemperatureBoiler();
+		},
+	};
+})();
+
+setTemperatureComponent();
 
 Shelly.addEventHandler(
     function (event, ud) {
@@ -104,10 +115,10 @@ Shelly.addEventHandler(
 	//  debugPrint(event_name);
 	  // temperature has changed
 	  if (event_name === "manual") {
-		readTemperaturePannu();
+		TemperatureHandler.refresh();
       }
 	  if (event_name === "temperature_change") {
-		readTemperaturePannu();
+		TemperatureHandler.refresh();
       }
     },
 	null
