@@ -2,15 +2,17 @@
 // 101 anturi pannu
 
 let CONFIG = {
-	anturi_id_pannu: "101",
-	anturi_pannu_name: "Pannu lämpötila",
-	anturi_id_alakierto: "100",
-	anturi_alakierto_name: "Varaaja alakierto lämpötila",
+	anturi_boiler_id: "101",
+	anturi_boiler_name: "Pannu lämpötila",
+	anturi_downCirculation_id: "100",
+	anturi_downCirculation_name: "Varaaja alakierto lämpötila",
 
-	boiler_max_temperature: 65,
+	boiler_max_temperature: 75, // pannun max lämpö, ylitys -> kierto päälle
+	boiler_min_temperature: 30, // talviajan alaraja
+	downCirculation_max_temperature: 60, // kierron max lämpö -> ylitys kierto pois päältä
 
-	debug: true,
-	dryrun: true,
+	debug: false,
+	dryrun: false,
 }
 
 function debugPrint(line) {
@@ -37,10 +39,10 @@ function setTemperatureComponent() {
 	Shelly.call(
 		"Temperature.SetConfig",
 		{
-			id: CONFIG.anturi_id_alakierto,
+			id: CONFIG.anturi_downCirculation_id,
 			config: {
-				id: CONFIG.anturi_id_alakierto,
-				name: CONFIG.anturi_alakierto_name,
+				id: CONFIG.anturi_downCirculation_id,
+				name: CONFIG.anturi_downCirculation_name,
 				report_thr_C: 1.0
 			}
 		},
@@ -49,10 +51,10 @@ function setTemperatureComponent() {
 	Shelly.call(
 		"Temperature.SetConfig",
 		{
-			id: CONFIG.anturi_id_pannu,
+			id: CONFIG.anturi_boiler_id,
 			config: {
-				id: CONFIG.anturi_id_pannu,
-				name: CONFIG.anturi_pannu_name,
+				id: CONFIG.anturi_boiler_id,
+				name: CONFIG.anturi_boiler_name,
 				report_thr_C: 1.0
 			}
 		},
@@ -64,24 +66,54 @@ let TemperatureHandler = (function () {
 	let boilerTemperature;
 	let downCirculationTemperature;
 
+	function winterTime() {
+		let now = Date(Date.now());
+		let month = now.getMonth(); // months start from 0
+
+		debugPrint("month is " + month);
+		if (month < 3 || month > 8) {
+			debugPrint("WINTERTIME !");
+			return true;
+		}
+
+		return false;
+	};
+
 	function setPump() {
+		debugPrint("Pannu lämpötila:  " + boilerTemperature);
+		debugPrint("Kierto lämpötila: " + downCirculationTemperature);
+		// pannu max lämpö ylitetty
 		if (boilerTemperature > CONFIG.boiler_max_temperature) {
+			debugPrint("Rule 1");
 			switchPump(true);
 		}
-		else if (boilerTemperature > downCirculationTemperature) {
+		// pannun minilämpö alitettu (talvikuukaudet)
+		else if (winterTime() && boilerTemperature < CONFIG.boiler_min_temperature) {
+			debugPrint("Rule 2");
 			switchPump(true);
 		}
+		// pannun lämpötila alle kierron
 		else if (boilerTemperature < downCirculationTemperature) {
+			debugPrint("Rule 3");
 			switchPump(false);
+		}
+		// kierron lämpö yli max arvon
+		else if (downCirculationTemperature > CONFIG.downCirculation_max_temperature) {
+			debugPrint("Rule 4");
+			switchPump(false);
+		}
+		// pannun lämpötila yli kierron lämpötilan
+		else if (boilerTemperature > downCirculationTemperature) {
+			debugPrint("Rule 5");
+			switchPump(true);
 		};
-	}
+	};
 
 	function readTemperatureAlakierto() {
 		Shelly.call(
 			"Temperature.GetStatus",
-			{ "id": CONFIG.anturi_id_alakierto },
+			{ "id": CONFIG.anturi_downCirculation_id },
 			function (result, error_code, error_message, user_data) {
-				debugPrint(user_data.pannu_temperature);
 				debugPrint(result.tC);
 				downCirculationTemperature = result.tC;
 				setPump();
@@ -93,7 +125,7 @@ let TemperatureHandler = (function () {
 	function readTemperatureBoiler() {
 		Shelly.call(
 			"Temperature.GetStatus",
-			{ "id": CONFIG.anturi_id_pannu },
+			{ "id": CONFIG.anturi_boiler_id },
 			function (result, error_code, error_message, user_data) {
 				//		debugPrint(result);
 				debugPrint(result.tC);
