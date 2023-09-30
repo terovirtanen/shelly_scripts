@@ -9,10 +9,10 @@ let CONFIG = {
 	temp_min: 50,
 	temp_min_activetime: 55,
 	temp_max_solar: 70,
-	temp_heating: 3,
+	temp_heating_increase: 3,
 
-	debug: true,
-	dryrun: true,
+	debug: false,
+	dryrun: false,
 };
 
 function debugPrint(line) {
@@ -40,27 +40,25 @@ function setTemperatureComponent() {
 // A remote Shelly abstraction Call an RPC method on the remote Shelly
 let RemoteShelly = {
 	_cb: function (result, error_code, error_message, callbackObject) {
-		debugPrint(result);
-		debugPrint(callbackObject);
-
 		if (result === undefined) {
-			callbackObject.getEmTotalCallback(null, null, null);
+			callbackObject.responseCallback(null, error_code, error_message);
 		} else {
 			let rpcResult = JSON.parse(result.body);
 			let rpcCode = result.code;
 			let rpcMessage = result.message;
-			callbackObject.getEmTotalCallback(rpcResult, rpcCode, rpcMessage);
+			callbackObject.responseCallback(rpcResult, rpcCode, rpcMessage);
 		}
 	},
 	composeEndpoint: function (method) {
 		return "http://" + this.address + "/rpc/" + method;
 	},
 	call: function (rpc, data, callbackObject) {
+		this.responseCallback = callbackObject;
 		let postData = {
 			url: this.composeEndpoint(rpc),
 			body: data,
 		};
-		Shelly.call("HTTP.POST", postData, RemoteShelly._cb, callbackObject);
+		Shelly.call("HTTP.POST", postData, RemoteShelly._cb, this);
 	},
 	getInstance: function (address) {
 		let rs = Object.create(this);
@@ -69,6 +67,9 @@ let RemoteShelly = {
 		rs.address = address;
 		return rs;
 	},
+	responseCallback: function(rpcResult, rpcCode, rpcMessage) {
+		debugPrint("This is default responseCallback that should override!");
+	}
 };
 
 function switchVastus(activate) {
@@ -95,37 +96,40 @@ let Heater = (function () {
 	let SOLAR_ACTIVATED;
 
 	// return values
-	// -1 : not value exists, cannot use to switch heater
+	// -1 : energy meter previous values are not exixts on outdated, cannot use to switch heater
 	// 0 : used more power than produced
 	// 1 : produced more power than used
-	function solarPower(now) {
+	function solarPower(timeNow) {
 		if (emTotalAct == null || prevEmTotalAct == null) {
-			SOLAR_ACTIVATED = false;
+			debugPrint("solarPower Error: no previous or current data!");
+			SOLAR_ACTIVATED = 0;
 			return -1;
 		}
+		let diffsec = (timeNow.valueOf() - prevEmDatetime.valueOf()) / 1000;
 		// timestamp is older than 30 min, em data is outdated
-		let diffsec = (now.valueOf() - prevEmDatetime.valueOf()) / 1000;
 		if (diffsec > (60 * 30)) {
-			SOLAR_ACTIVATED = false;
+			debugPrint("solarPower Error: previous data outdated!");
+			SOLAR_ACTIVATED = 0;
 			return -1;
 		}
 
+		// calculate is power used or produced
 		let powerUsed = emTotalAct - prevEmTotalAct;
 		let powerRet = emTotalActRet - prevEmTotalActRet;
 		let powerSummary = powerUsed - powerRet;
 
+		// used more power than produced from previous netto leveling
 		if (powerSummary > CONFIG.power_limit) {
-			SOLAR_ACTIVATED = false;
+			SOLAR_ACTIVATED = 0;
 			return 0;
 		}
+		// prouced more power than used from previous netto leveling
 		if (powerSummary < (CONFIG.power_limit * -1)) {
+			SOLAR_ACTIVATED = 1;
 			return 1;
 		}
-		if (SOLAR_ACTIVATED) {
-			return 1;
-		}
-
-		return -1;
+		// return last state
+		return SOLAR_ACTIVATED;
 	};
 	function action() {
 		let now = Date(Date.now());
@@ -133,25 +137,29 @@ let Heater = (function () {
 
 		let solarStatus = solarPower(now);
 
-		let min_temp = (hour > 17 && hour < 22) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
-		let max_temp = (solarStatus == 1) ? CONFIG.temp_max_solar : min_temp + CONFIG.temp_heating;
+		// use higher temperature active time 
+		let min_temp = (hour > 16 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
+		// own produced solar power set max limit to higher
+		let max_temp = (solarStatus == 1) ? CONFIG.temp_max_solar : min_temp + CONFIG.temp_heating_increase;
 
 		debugPrint("action upCirculationTemperature : " + upCirculationTemperature);
 		debugPrint("action min_temp : " + min_temp);
 		debugPrint("action max_temp : " + max_temp);
 		debugPrint("action SOLAR_ACTIVATED : " + SOLAR_ACTIVATED);
+		// under minimum limit, set heater on
 		if (upCirculationTemperature < min_temp) {
 			switchVastus(true);
 		}
+		// over maximum limit, set heater off
 		else if (upCirculationTemperature > max_temp) {
 			switchVastus(false);
 		}
+		// no produced solar power, set heater off
 		else if (solarStatus == 0) {
-			SOLAR_ACTIVATED = false;
 			switchVastus(false);
 		}
+		// use solar power, set heater on
 		else if (solarStatus == 1) {
-			SOLAR_ACTIVATED = true;
 			switchVastus(true);
 		}
 	};
@@ -178,7 +186,7 @@ let Heater = (function () {
 		emShelly.call(
 			"EMData.GetStatus",
 			{ id: 0 },
-			Heater
+			Heater.getEmTotalCallback
 		);
 	};
 
@@ -236,7 +244,6 @@ Shelly.addEventHandler(
 	},
 	null
 );
-
 
 setTemperatureComponent();
 
