@@ -10,7 +10,7 @@ let CONFIG = {
 	anturi_offset: 8.0,
 
 	temp_min: 55,
-	temp_min_activetime: 58,
+	temp_min_activetime: 60,
 	temp_max_solar: 75,
 	temp_heating_increase: 2,
 
