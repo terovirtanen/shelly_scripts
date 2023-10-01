@@ -122,7 +122,7 @@ let Heater = (function () {
 	};
 
 	// return values
-	// null : energy meter previous values are not exixts on outdated, cannot use to switch heater
+	// -2 : energy meter previous values are not exixts on outdated, cannot use to switch heater
 	// -1 :  not enough power produced on measurement period
 	// 0 : turn off, used more power than produced
 	// 1,2 : turn on, produced more power than used
@@ -132,7 +132,7 @@ let Heater = (function () {
 		if (powerSummary == null) {
 			debugPrint("refreshSolarPowerStatus Error: no power usage from recent measurement period!");
 			// if previous check has been turn on, should set to stop first
-			solarPowerStatus = (solarPowerStatus > 0) ? 0 : null;
+			solarPowerStatus = (solarPowerStatus > 0) ? 0 : -2;
 		}
 		// no solar power produced enough to calculate 
 		else if (prevEmTotalActRet - emTotalActRet < CONFIG.power_limit) {
@@ -228,7 +228,7 @@ let Heater = (function () {
 
 	return { // public interface
 		init: function () {
-			solarPowerStatus = null;
+			solarPowerStatus = -2;
 		},
 		refresh: function () {
 			callGetTemperature(CONFIG.anturi_id_ylakierto);
