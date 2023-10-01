@@ -6,6 +6,7 @@ let CONFIG = {
 	anturi_boiler_name: "Pannu lämpötila",
 	anturi_downCirculation_id: "100",
 	anturi_downCirculation_name: "Varaaja alakierto lämpötila",
+	anturi_downCirculation_offset: 8.0,
 
 	boiler_max_temperature: 75, // pannun max lämpö, ylitys -> kierto päälle
 	boiler_min_temperature: 30, // talviajan alaraja
@@ -43,7 +44,8 @@ function setTemperatureComponent() {
 			config: {
 				id: CONFIG.anturi_downCirculation_id,
 				name: CONFIG.anturi_downCirculation_name,
-				report_thr_C: 1.0
+				report_thr_C: 1.0,
+				offset_C: CONFIG.anturi_downCirculation_offset
 			}
 		},
 		function (response, error_code, error_message) { }

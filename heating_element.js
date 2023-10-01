@@ -7,10 +7,12 @@ let CONFIG = {
 
 	power_limit: 100, // powerlimit 100Wh, 
 	anturi_id_ylakierto: "100",
-	temp_min: 50,
-	temp_min_activetime: 55,
-	temp_max_solar: 70,
-	temp_heating_increase: 3,
+	anturi_offset: 8.0,
+
+	temp_min: 54,
+	temp_min_activetime: 58,
+	temp_max_solar: 75,
+	temp_heating_increase: 2,
 
 	debug: false,
 	dryrun: false,
@@ -30,7 +32,8 @@ function setTemperatureComponent() {
 			config: {
 				id: CONFIG.anturi_id_ylakierto,
 				name: "yläkierto lämpötila",
-				report_thr_C: 1.0
+				report_thr_C: 1.0,
+				offset_C: CONFIG.anturi_offset
 			}
 		},
 		function (response, error_code, error_message) { }
