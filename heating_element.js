@@ -3,6 +3,7 @@ let CONFIG = {
 	key_total: "EM_TOTAL",
 	key_total_ret: "EM_TOTAL_RET",
 	key_total_store_datetime: "EM_STORETIME",
+	em_measurement_period: 15,  // tuntinetotus 15min osissa
 
 	power_limit: 100, // powerlimit 100Wh, 
 	anturi_id_ylakierto: "100",
@@ -67,7 +68,7 @@ let RemoteShelly = {
 		rs.address = address;
 		return rs;
 	},
-	responseCallback: function(rpcResult, rpcCode, rpcMessage) {
+	responseCallback: function (rpcResult, rpcCode, rpcMessage) {
 		debugPrint("This is default responseCallback that should override!");
 	}
 };
@@ -93,49 +94,68 @@ let Heater = (function () {
 	let prevEmTotalAct;
 	let prevEmTotalActRet;
 	let prevEmDatetime;
-	let SOLAR_ACTIVATED;
+	let solarPowerStatus;
 
+	// calculate energy meter power balance from recent measurement period
 	// return values
-	// -1 : energy meter previous values are not exixts on outdated, cannot use to switch heater
-	// 0 : used more power than produced
-	// 1 : produced more power than used
-	function solarPower(timeNow) {
+	//  null: cannot calculate value
+	//  positive value: used more than produced
+	//  negative value: produced more than used
+	function emPowerUsageFromMeasurementPeriod(timeNow) {
+		let powerSummary = null;
 		if (emTotalAct == null || prevEmTotalAct == null) {
-			debugPrint("solarPower Error: no previous or current data!");
-			SOLAR_ACTIVATED = 0;
-			return -1;
+			debugPrint("emPower Error: no previous or current data!");
+			return powerSummary;
 		}
 		let diffsec = (timeNow.valueOf() - prevEmDatetime.valueOf()) / 1000;
-		// timestamp is older than 30 min, em data is outdated
-		if (diffsec > (60 * 30)) {
-			debugPrint("solarPower Error: previous data outdated!");
-			SOLAR_ACTIVATED = 0;
-			return -1;
+		// timestamp is older than 30 min (2* em measurement period), em data is outdated
+		if (diffsec > (60 * CONFIG.em_measurement_period * 2)) {
+			debugPrint("emPower Error: previous data outdated!");
+			return powerSummary;
 		}
 
 		// calculate is power used or produced
 		let powerUsed = emTotalAct - prevEmTotalAct;
 		let powerRet = emTotalActRet - prevEmTotalActRet;
-		let powerSummary = powerUsed - powerRet;
+		powerSummary = powerUsed - powerRet;
+		return powerSummary;
+	};
 
+	// return values
+	// null : energy meter previous values are not exixts on outdated, cannot use to switch heater
+	// -1 :  not enough power produced on measurement period
+	// 0 : turn off, used more power than produced
+	// 1 : turn on, produced more power than used
+	function refreshSolarPowerStatus(timeNow) {
+		// get power balance 
+		let powerSummary = emPowerUsageFromMeasurementPeriod(timeNow);
+		if (powerSummary == null) {
+			debugPrint("refreshSolarPowerStatus Error: no power usage from recent measurement period!");
+			// if previous check has been turn on, should set to stop first
+			solarPowerStatus = (solarPowerStatus == 1) ? 0 : null;
+		}
+		// no solar power produced enough to calculate 
+		else if (prevEmTotalActRet - emTotalActRet < CONFIG.power_limit) {
+			// if previous status has been turn on, should set to stop first
+			solarPowerStatus = (solarPowerStatus == 1) ? 0 : -1;
+		}
 		// used more power than produced from previous netto leveling
-		if (powerSummary > CONFIG.power_limit) {
-			SOLAR_ACTIVATED = 0;
-			return 0;
+		else if (powerSummary > CONFIG.power_limit) {
+			solarPowerStatus = 0;
 		}
-		// prouced more power than used from previous netto leveling
-		if (powerSummary < (CONFIG.power_limit * -1)) {
-			SOLAR_ACTIVATED = 1;
-			return 1;
+		// produced more power than used from previous netto leveling
+		else if (powerSummary < (CONFIG.power_limit * -1)) {
+			solarPowerStatus = 1;
 		}
+		debugPrint("action solarPowerStatus : " + solarPowerStatus);
 		// return last state
-		return SOLAR_ACTIVATED;
+		return solarPowerStatus;
 	};
 	function action() {
 		let now = Date(Date.now());
 		let hour = now.getHours();
 
-		let solarStatus = solarPower(now);
+		let solarStatus = refreshSolarPowerStatus(now);
 
 		// use higher temperature active time 
 		let min_temp = (hour > 16 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
@@ -145,7 +165,6 @@ let Heater = (function () {
 		debugPrint("action upCirculationTemperature : " + upCirculationTemperature);
 		debugPrint("action min_temp : " + min_temp);
 		debugPrint("action max_temp : " + max_temp);
-		debugPrint("action SOLAR_ACTIVATED : " + SOLAR_ACTIVATED);
 		// under minimum limit, set heater on
 		if (upCirculationTemperature < min_temp) {
 			switchVastus(true);
