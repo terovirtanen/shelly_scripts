@@ -125,27 +125,29 @@ let Heater = (function () {
 	// null : energy meter previous values are not exixts on outdated, cannot use to switch heater
 	// -1 :  not enough power produced on measurement period
 	// 0 : turn off, used more power than produced
-	// 1 : turn on, produced more power than used
+	// 1,2 : turn on, produced more power than used
 	function refreshSolarPowerStatus(timeNow) {
 		// get power balance 
 		let powerSummary = emPowerUsageFromMeasurementPeriod(timeNow);
 		if (powerSummary == null) {
 			debugPrint("refreshSolarPowerStatus Error: no power usage from recent measurement period!");
 			// if previous check has been turn on, should set to stop first
-			solarPowerStatus = (solarPowerStatus == 1) ? 0 : null;
+			solarPowerStatus = (solarPowerStatus > 0) ? 0 : null;
 		}
 		// no solar power produced enough to calculate 
 		else if (prevEmTotalActRet - emTotalActRet < CONFIG.power_limit) {
 			// if previous status has been turn on, should set to stop first
-			solarPowerStatus = (solarPowerStatus == 1) ? 0 : -1;
+			// use slow mode, case measurement period has just changed 
+			solarPowerStatus = (solarPowerStatus > 0) ? solarPowerStatus - 1 : -1;
 		}
 		// used more power than produced from previous netto leveling
 		else if (powerSummary > CONFIG.power_limit) {
-			solarPowerStatus = 0;
+			// use slow mode, case measurement period has just changed 
+			solarPowerStatus = (solarPowerStatus > 0) ? solarPowerStatus - 1 : 0;
 		}
 		// produced more power than used from previous netto leveling
 		else if (powerSummary < (CONFIG.power_limit * -1)) {
-			solarPowerStatus = 1;
+			solarPowerStatus = 2;
 		}
 		debugPrint("action solarPowerStatus : " + solarPowerStatus);
 		// return last state
@@ -160,7 +162,7 @@ let Heater = (function () {
 		// use higher temperature active time 
 		let min_temp = (hour > 16 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
 		// own produced solar power set max limit to higher
-		let max_temp = (solarStatus == 1) ? CONFIG.temp_max_solar : min_temp + CONFIG.temp_heating_increase;
+		let max_temp = (solarStatus > 0) ? CONFIG.temp_max_solar : min_temp + CONFIG.temp_heating_increase;
 
 		debugPrint("action upCirculationTemperature : " + upCirculationTemperature);
 		debugPrint("action min_temp : " + min_temp);
@@ -173,13 +175,13 @@ let Heater = (function () {
 		else if (upCirculationTemperature > max_temp) {
 			switchVastus(false);
 		}
+		// use solar power, set heater on
+		else if (solarStatus > 0) {
+			switchVastus(true);
+		}
 		// no produced solar power, set heater off
 		else if (solarStatus == 0) {
 			switchVastus(false);
-		}
-		// use solar power, set heater on
-		else if (solarStatus == 1) {
-			switchVastus(true);
 		}
 	};
 
@@ -225,6 +227,9 @@ let Heater = (function () {
 	};
 
 	return { // public interface
+		init: function () {
+			solarPowerStatus = null;
+		},
 		refresh: function () {
 			callGetTemperature(CONFIG.anturi_id_ylakierto);
 		},
@@ -245,6 +250,8 @@ let Heater = (function () {
 
 	};
 })();
+
+Heater.init();
 
 Shelly.addEventHandler(
 	function (event, ud) {
