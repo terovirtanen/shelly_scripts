@@ -138,7 +138,7 @@ let Heater = (function () {
 			solarPowerStatus = (solarPowerStatus > 0) ? 0 : -2;
 		}
 		// no solar power produced enough to calculate 
-		else if (prevEmTotalActRet - emTotalActRet < CONFIG.power_limit) {
+		else if ((emTotalActRet - prevEmTotalActRet)  < CONFIG.power_limit) {
 			// if previous status has been turn on, should set to stop first
 			// use slow mode, case measurement period has just changed 
 			solarPowerStatus = (solarPowerStatus > 0) ? solarPowerStatus - 1 : -1;
