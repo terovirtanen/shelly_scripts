@@ -136,7 +136,7 @@ function datetimeNowString() {
   let now = Date(Date.now());
   let datetime = now.getFullYear()+'-'+(now.getMonth()+1)+'-'+now.getDate()+'T'+now.getHours()+':'+now.getMinutes()+':'+now.getSeconds();
 
-  return datetime:
+  return datetime;
 }
 
 function testTime() {
