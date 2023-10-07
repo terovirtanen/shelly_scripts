@@ -9,8 +9,8 @@ let CONFIG = {
 	anturi_id_ylakierto: "100",
 	anturi_offset: 8.0,
 
-	temp_min: 55,
-	temp_min_activetime: 60,
+	temp_min: 50,
+	temp_min_activetime: 55,
 	temp_max_solar: 75,
 	temp_heating_increase: 2,
 
@@ -44,6 +44,7 @@ function setTemperatureComponent() {
 // A remote Shelly abstraction Call an RPC method on the remote Shelly
 let RemoteShelly = {
 	_cb: function (result, error_code, error_message, callbackObject) {
+		// connection to remote failed, callback with null values
 		if (result === undefined) {
 			callbackObject.responseCallback(null, error_code, error_message);
 		} else {
