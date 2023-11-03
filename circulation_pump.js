@@ -9,7 +9,7 @@ let CONFIG = {
 	anturi_downCirculation_offset: 8.0,
 
 	boiler_max_temperature: 75, // pannun max lämpö, ylitys -> kierto päälle
-	boiler_min_temperature: 30, // talviajan alaraja
+	boiler_min_temperature: 40, // talviajan alaraja
 	downCirculation_max_temperature: 65, // kierron max lämpö -> ylitys kierto pois päältä
 
 	debug: false,
