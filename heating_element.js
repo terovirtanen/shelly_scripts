@@ -185,6 +185,7 @@ let Heater = (function () {
 
 		return min_temp;
 	};
+	
 	function action() {
 		let now = Date(Date.now());
 		let hour = now.getHours();
@@ -318,4 +319,3 @@ Timer.set(
 	null
 )
 Shelly.emitEvent("switchHeater", {});
-
