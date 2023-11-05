@@ -5,6 +5,9 @@ let CONFIG = {
 	key_total_store_datetime: "EM_STORETIME",
 	em_measurement_period: 15,  // tuntinetotus 15min osissa
 
+	key_boiler_temperature: "BOILER_TEMPERATURE",
+	key_boiler_store_datetime: "BOILER_STORETIME",
+
 	power_limit: 100, // powerlimit 100Wh, 
 	anturi_id_ylakierto: "100",
 	anturi_offset: 8.0,
@@ -13,6 +16,9 @@ let CONFIG = {
 	temp_min_activetime: 55,
 	temp_max_solar: 75,
 	temp_heating_increase: 2,
+	
+	boiler_stop_temperature: 50,
+	temp_boiler_increase: 10,
 
 	debug: false,
 	dryrun: false,
@@ -100,6 +106,9 @@ let Heater = (function () {
 	let prevEmDatetime;
 	let solarPowerStatus;
 
+	let boilerTemperature;
+	let boilerDatetime;
+
 	// calculate energy meter power balance from recent measurement period
 	// return values
 	//  null: cannot calculate value
@@ -157,6 +166,25 @@ let Heater = (function () {
 		// return last state
 		return solarPowerStatus;
 	};
+
+	function getTempMin(timeNow, hour){
+		// use higher temperature active time 
+		let min_temp = (hour > 16 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
+
+		// check is boiler stopped, set limit higher if boiler is stopped
+		let diffsec = (timeNow.valueOf() - boilerDatetime.valueOf()) / 1000;
+		// timestamp is older than 60 min , boiler temperature data is outdated
+		if (diffsec > (60 * 60)) {
+			debugPrint("boiler Temperature Error: temperature data outdated!");
+			min_temp = min_temp + CONFIG.temp_boiler_increase;
+		}
+		else if (boilerTemperature < CONFIG.boiler_stop_temperature) {
+			debugPrint("boiler is stopped!");
+			min_temp = min_temp + CONFIG.temp_boiler_increase;
+		}
+
+		return min_temp;
+	};
 	function action() {
 		let now = Date(Date.now());
 		let hour = now.getHours();
@@ -164,7 +192,8 @@ let Heater = (function () {
 		let solarStatus = refreshSolarPowerStatus(now);
 
 		// use higher temperature active time 
-		let min_temp = (hour > 16 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
+		let min_temp = getTempMin(now, hour);
+
 		// own produced solar power set max limit to higher
 		let max_temp = (solarStatus > 0) ? CONFIG.temp_max_solar : min_temp + CONFIG.temp_heating_increase;
 
@@ -197,6 +226,8 @@ let Heater = (function () {
 				prevEmTotalAct = result.items.EM_TOTAL.value;
 				prevEmTotalActRet = result.items.EM_TOTAL_RET.value;
 				prevEmDatetime = Date(result.items.EM_STORETIME.value);
+				boilerTemperature = result.items.BOILER_TEMPERATURE.value;
+				boilerDatetime = Date(result.items.BOILER_STORETIME.value);
 
 				action();
 			},
