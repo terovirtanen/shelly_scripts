@@ -11,6 +11,7 @@ let CONFIG = {
 	boiler_max_temperature: 75, // pannun max lämpö, ylitys -> kierto päälle
 	boiler_min_temperature: 40, // talviajan alaraja
 	downCirculation_max_temperature: 65, // kierron max lämpö -> ylitys kierto pois päältä
+	upCirculation_max_temperature: 73, // kierron ylä max lämpö -> ylitys kierto päälle päältä. case vastus lämmittää
 
 	debug: false,
 	dryrun: false,
@@ -68,6 +69,10 @@ let TemperatureHandler = (function () {
 	let boilerTemperature;
 	let downCirculationTemperature;
 
+	let upCirculationTemperature; // -1 if outdated
+	let upCirculationDatetime;
+
+
 	function winterTime() {
 		let now = Date(Date.now());
 		let month = now.getMonth(); // months start from 0
@@ -89,26 +94,54 @@ let TemperatureHandler = (function () {
 			debugPrint("Rule 1");
 			switchPump(true);
 		}
+		// kierron ylälämpö ylitetty, vastus lämmittää 
+		else if (upCirculationTemperature > CONFIG.upCirculation_max_temperature && upCirculationTemperature > boilerTemperature) {
+			debugPrint("Rule 2");
+			switchPump(true);
+		}
 		// pannun minilämpö alitettu (talvikuukaudet)
 		else if (winterTime() && boilerTemperature < CONFIG.boiler_min_temperature) {
-			debugPrint("Rule 2");
+			debugPrint("Rule 3");
 			switchPump(true);
 		}
 		// pannun lämpötila alle kierron
 		else if (boilerTemperature < downCirculationTemperature) {
-			debugPrint("Rule 3");
+			debugPrint("Rule 4");
 			switchPump(false);
 		}
 		// kierron lämpö yli max arvon
 		else if (downCirculationTemperature > CONFIG.downCirculation_max_temperature) {
-			debugPrint("Rule 4");
+			debugPrint("Rule 5");
 			switchPump(false);
 		}
 		// pannun lämpötila yli kierron lämpötilan
 		else if (boilerTemperature > downCirculationTemperature) {
-			debugPrint("Rule 5");
+			debugPrint("Rule 6");
 			switchPump(true);
 		};
+	};
+
+	function readKvs() {
+		Shelly.call(
+			"KVS.GetMany",
+			{ id: 0 },
+			function (result, error_code, error_message, user_data) {
+
+				upCirculationTemperature = result.items.UP_CIRCULATION_TEMPERATURE.value;
+				upCirculationDatetime = Date(result.items.UP_CIRCULATION_STORETIME.value);
+
+				let now = Date(Date.now());
+				let diffsec = (now.valueOf() - upCirculationDatetime.valueOf()) / 1000;
+				// timestamp is older than 30 min (2* em measurement period), em data is outdated
+				if (diffsec > (60 * 5)) {
+					debugPrint("upCirculation Error: data outdated!");
+					upCirculationTemperature = -1;
+				}
+
+				setPump();
+			},
+			null
+		);
 	};
 
 	function readTemperatureAlakierto() {
@@ -118,7 +151,7 @@ let TemperatureHandler = (function () {
 			function (result, error_code, error_message, user_data) {
 				debugPrint(result.tC);
 				downCirculationTemperature = result.tC;
-				setPump();
+				readKvs();
 			},
 			null
 		);
@@ -137,6 +170,7 @@ let TemperatureHandler = (function () {
 			null
 		);
 	};
+
 
 	return { // public interface
 		refresh: function () {
@@ -161,8 +195,20 @@ Shelly.addEventHandler(
 		if (event_name === "temperature_change") {
 			TemperatureHandler.refresh();
 		}
+		if (event_name === "up_circulation_temperature") {
+			TemperatureHandler.refresh();
+		}
 	},
 	null
 );
 
+// check heating up circulation status every  5 minute
+Timer.set(
+	1000 * 60 * 5, // msec, 5min check  
+	true,
+	function (user_data) {
+		Shelly.emitEvent("up_circulation_temperature", {});
+	},
+	null
+)
 Shelly.emitEvent("manual", {});
