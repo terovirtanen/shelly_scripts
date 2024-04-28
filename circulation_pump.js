@@ -11,7 +11,7 @@ let CONFIG = {
 	boiler_max_temperature: 75, // pannun max lämpö, ylitys -> kierto päälle
 	boiler_min_temperature: 40, // talviajan alaraja
 	downCirculation_max_temperature: 65, // kierron max lämpö -> ylitys kierto pois päältä
-	upCirculation_max_temperature: 73, // kierron ylä max lämpö -> ylitys kierto päälle päältä. case vastus lämmittää
+	upCirculation_max_temperature: 72, // kierron ylä max lämpö -> ylitys kierto päälle päältä. case vastus lämmittää
 
 	debug: false,
 	dryrun: false,
