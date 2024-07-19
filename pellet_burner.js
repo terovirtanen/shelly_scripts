@@ -3,16 +3,18 @@
 // burner controller
 let CONFIG = {
 	upCirculation_limit_high_temperature: 65, // kierron ylä lämpö yläraja -> yli, pellettipoltin pois päältä
-	upCirculation_limit_low_temperature: 55, // kierron ylä lämpö alaraja -> alle, pellettipoltin päälle
+	upCirculation_limit_low_temperature: 53, // kierron ylä lämpö alaraja -> alle, pellettipoltin päälle
 
+	upCirculation_limit_afternoon_temperature: 62, // kierron ylä lämpö iltapäivällä -> alle, pellettipoltin päälle, lämmitetään iltaa varten
+    
     burner_starting_current: 2.0, // ??? sytytysvastus päällä
     burner_running_current: 0.65, // 0.2 - 0.7
     burner_idle_current: 0.02, // 0.02
     burner_starting_limit_current: 1.0, 
-    burner_running_limit_current: 0.1, 
+    burner_running_limit_current: 0.1,     
 
-	debug: true,
-	dryrun: true,
+	debug: false,
+	dryrun: false,
 }
 
 let timerhanlde = null;
@@ -50,9 +52,34 @@ let BurnerHandler = (function () {
         return false;
     };
 
-    function action() {
-		debugPrint("Polttimen sammutus");
+    function isAfternoon() {
+        let hour = Date(Date.now()).getHours();
+        if (hour > 14 && hour < 20) {
+            return true;
+        }
+        return false;
+    };
 
+    function action() {
+		debugPrint("Polttimen kytkentä/sammutus");
+        let afternoon = isAfternoon();
+
+        // no temperature data, turn burner on just in case
+        if (upCirculationTemperature < 0 && afternoon) {
+            switchBurner(true);
+        }
+        // no need to heat water
+        else if (upCirculationTemperature > CONFIG.upCirculation_limit_high_temperature){
+            switchBurner(false);
+        }
+        // heat is needed
+        else if (upCirculationTemperature < CONFIG.upCirculation_limit_low_temperature){
+            switchBurner(true);
+        }
+        // afternoon, limit is tighter
+        else if (afternoon && upCirculationTemperature < CONFIG.upCirculation_limit_afternoon_temperature){
+            switchBurner(true);
+        };
     };
 
 	function readKvs() {
