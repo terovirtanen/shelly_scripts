@@ -1,11 +1,14 @@
 
 // Shelly PM1 
+// burner controller
 let CONFIG = {
-	upCirculation_limit_temperature: 65, // kierron ylä lämpö -> alle, pellettipoltin päälle
+	upCirculation_limit_high_temperature: 65, // kierron ylä lämpö yläraja -> yli, pellettipoltin pois päältä
+	upCirculation_limit_low_temperature: 55, // kierron ylä lämpö alaraja -> alle, pellettipoltin päälle
 
-    burner_starting_current: 0.85, //??
-    burner_running_current: 0.65, // 0.239 - 0.652
-    burner_idle_current: 0.02, // 0.023
+    burner_starting_current: 2.0, // ??? sytytysvastus päällä
+    burner_running_current: 0.65, // 0.2 - 0.7
+    burner_idle_current: 0.02, // 0.02
+    burner_starting_limit_current: 1.0, 
     burner_running_limit_current: 0.1, 
 
 	debug: true,
@@ -36,14 +39,44 @@ function switchBurner(activate) {
 
 let BurnerHandler = (function () {
     let current_now;
+	
+    let upCirculationTemperature; // -1 if outdated
+	let upCirculationDatetime;
 
     function running() {
-        if (current_now > burner_running_limit_current) {
+        if (current_now > CONFIG.burner_running_limit_current) {
             return true;
         }
         return false;
     };
 
+    function action() {
+		debugPrint("Polttimen sammutus");
+
+    };
+
+	function readKvs() {
+		Shelly.call(
+			"KVS.GetMany",
+			{ id: 0 },
+			function (result, error_code, error_message, user_data) {
+
+				upCirculationTemperature = result.items.UP_CIRCULATION_TEMPERATURE.value;
+				upCirculationDatetime = Date(result.items.UP_CIRCULATION_STORETIME.value);
+
+				let now = Date(Date.now());
+				let diffsec = (now.valueOf() - upCirculationDatetime.valueOf()) / 1000;
+				// timestamp is older than 30 min (2* em measurement period), em data is outdated
+				if (diffsec > (60 * 5)) {
+					debugPrint("upCirculation Error: data outdated!");
+					upCirculationTemperature = -1;
+				}
+
+				action();
+			},
+			null
+		);
+	};
 
     function readCurrent() {
 		Shelly.call(
@@ -53,6 +86,9 @@ let BurnerHandler = (function () {
                 debugPrint(result.current);
                 current_now = result.current;
                 // debugPrint(result.aenergy);
+                if (! running()) {
+                    readKvs();
+                }
 			},
 			null
 		);

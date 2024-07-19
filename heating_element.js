@@ -17,7 +17,7 @@ let CONFIG = {
 	temp_max_solar: 75,
 	temp_heating_increase: 2,
 	
-	boiler_stop_temperature: 50,
+	boiler_stop_temperature: 40,
 	temp_boiler_increase: 10,
 
 	debug: false,
