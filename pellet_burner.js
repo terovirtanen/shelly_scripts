@@ -3,9 +3,9 @@
 // burner controller
 let CONFIG = {
 	upCirculation_limit_high_temperature: 65, // kierron ylä lämpö yläraja -> yli, pellettipoltin pois päältä
-	upCirculation_limit_low_temperature: 53, // kierron ylä lämpö alaraja -> alle, pellettipoltin päälle
+	upCirculation_limit_low_temperature: 51, // kierron ylä lämpö alaraja -> alle, pellettipoltin päälle
 
-	upCirculation_limit_afternoon_temperature: 62, // kierron ylä lämpö iltapäivällä -> alle, pellettipoltin päälle, lämmitetään iltaa varten
+	upCirculation_limit_afternoon_temperature: 61, // kierron ylä lämpö iltapäivällä -> alle, pellettipoltin päälle, lämmitetään iltaa varten
     
     burner_starting_current: 2.0, // ??? sytytysvastus päällä
     burner_running_current: 0.65, // 0.2 - 0.7
@@ -54,7 +54,7 @@ let BurnerHandler = (function () {
 
     function isAfternoon() {
         let hour = Date(Date.now()).getHours();
-        if (hour > 14 && hour < 20) {
+        if (hour > 17 && hour < 22) {
             return true;
         }
         return false;
