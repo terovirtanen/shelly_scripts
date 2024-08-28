@@ -1,0 +1,16 @@
+{
+  "name": "forecast",
+  "private": true,
+  "description": "test forecast",
+  "version": "1.0.0",
+  "type": "module",
+
+  "scripts": {
+    "test": "node forecast.js",
+    "test_fmi": "node forecast_fmi.js"
+  },
+  "dependencies": {
+    "node-fetch": "^3.2.10",
+    "suncalc":"1.9.0" 
+  }
+}
