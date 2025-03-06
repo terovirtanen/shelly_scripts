@@ -99,8 +99,12 @@ let BurnerHandler = (function () {
 
 				upCirculationTemperature = result.items.UP_CIRCULATION_TEMPERATURE.value;
 				upCirculationDatetime = Date(result.items.UP_CIRCULATION_STORETIME.value);
+				boilerTemperature = result.items.BOILER_TEMPERATURE.value;
+				boilerDatetime = Date(result.items.BOILER_STORETIME.value);
 
 				let now = Date(Date.now());
+
+				// up circulation temperature
 				let diffsec = (now.valueOf() - upCirculationDatetime.valueOf()) / 1000;
 				// timestamp is older than 30 min (2* em measurement period), em data is outdated
 				if (diffsec > (60 * 5)) {
@@ -108,14 +112,10 @@ let BurnerHandler = (function () {
 					upCirculationTemperature = -1;
 				}
 
-				// boiler temperture
-				boilerTemperature = result.items.BOILER_TEMPERATURE.value;
-				boilerDatetime = Date(result.items.BOILER_STORETIME.value);
-
-				let boilerNow = Date(Date.now());
+				// boiler temperature
 				let boilerDiffsec = (now.valueOf() - boilerDatetime.valueOf()) / 1000;
 				// timestamp is older than 30 min (2* em measurement period), em data is outdated
-				if (diffsec > (60 * 5)) {
+				if (boilerDiffsec > (60 * 5)) {
 					debugPrint("boiler Error: data outdated!");
 					boilerTemperature = -1;
 				}				
