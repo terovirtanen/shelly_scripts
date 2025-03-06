@@ -6,7 +6,9 @@ let CONFIG = {
 	upCirculation_limit_low_temperature: 51, // kierron ylä lämpö alaraja -> alle, pellettipoltin päälle
 
 	upCirculation_limit_afternoon_temperature: 61, // kierron ylä lämpö iltapäivällä -> alle, pellettipoltin päälle, lämmitetään iltaa varten
-    
+
+	boiler_limit_low_temperature: 43, // pannun alalämpötila, kierron alaraja on 40
+
     burner_starting_current: 2.0, // ??? sytytysvastus päällä
     burner_running_current: 0.65, // 0.2 - 0.7
     burner_idle_current: 0.02, // 0.02
@@ -45,6 +47,9 @@ let BurnerHandler = (function () {
     let upCirculationTemperature; // -1 if outdated
 	let upCirculationDatetime;
 
+    let boilerTemperature; // -1 if outdated
+	let boilerDatetime;
+
     function running() {
         if (current_now > CONFIG.burner_running_limit_current) {
             return true;
@@ -68,6 +73,10 @@ let BurnerHandler = (function () {
         if (upCirculationTemperature < 0 && afternoon) {
             switchBurner(true);
         }
+		// boiler temperature is under limit
+		else if (boilerTemperature < CONFIG.boiler_limit_low_temperature ) {
+            switchBurner(true);
+		}
         // no need to heat water
         else if (upCirculationTemperature > CONFIG.upCirculation_limit_high_temperature){
             switchBurner(false);
@@ -98,6 +107,18 @@ let BurnerHandler = (function () {
 					debugPrint("upCirculation Error: data outdated!");
 					upCirculationTemperature = -1;
 				}
+
+				// boiler temperture
+				boilerTemperature = result.items.BOILER_TEMPERATURE.value;
+				boilerDatetime = Date(result.items.BOILER_STORETIME.value);
+
+				let boilerNow = Date(Date.now());
+				let boilerDiffsec = (now.valueOf() - boilerDatetime.valueOf()) / 1000;
+				// timestamp is older than 30 min (2* em measurement period), em data is outdated
+				if (diffsec > (60 * 5)) {
+					debugPrint("boiler Error: data outdated!");
+					boilerTemperature = -1;
+				}				
 
 				action();
 			},
