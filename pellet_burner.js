@@ -172,12 +172,13 @@ Shelly.addEventHandler(
 );
 
 function setTimer() {
-	let now = Date(Date.now());
-	let minutes = 15 - (now.getMinutes() % 15);// 15min välein 
-	let seconds = now.getSeconds(); // sekunnit 0:aan
+	// let now = Date(Date.now());
+	// let minutes = 15 - (now.getMinutes() % 15);// 15min välein 
+	// let seconds = now.getSeconds(); // sekunnit 0:aan
 
-	// msec
-	let timercount = (minutes * 60 - seconds) * 1000;
+	// // msec
+	// let timercount = (minutes * 60 - seconds) * 1000;
+	let timercount = 1000 * 60; // msec, 1min check  
 
 	Timer.clear(timerhanlde);
 
