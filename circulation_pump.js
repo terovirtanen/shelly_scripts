@@ -13,6 +13,9 @@ let CONFIG = {
 	downCirculation_max_temperature: 65, // kierron max lämpö -> ylitys kierto pois päältä
 	upCirculation_max_temperature: 72, // kierron ylä max lämpö -> ylitys kierto päälle päältä. case vastus lämmittää
 
+	key_up_circulation_temperature: "UP_CIRCULATION_TEMPERATURE",
+	key_up_circulation_store_datetime: "UP_CIRCULATION_STORETIME",
+
 	debug: false,
 	dryrun: false,
 }
@@ -126,9 +129,19 @@ let TemperatureHandler = (function () {
 			"KVS.GetMany",
 			{ id: 0 },
 			function (result, error_code, error_message, user_data) {
+                for (let i = 0; i < result.items.length; i++) {
+                    let item = result.items[i];
 
-				upCirculationTemperature = result.items.UP_CIRCULATION_TEMPERATURE.value;
-				upCirculationDatetime = Date(result.items.UP_CIRCULATION_STORETIME.value);
+					if (item.key === CONFIG.key_up_circulation_temperature) {
+						upCirculationTemperature = item.value;
+					}
+					if (item.key === CONFIG.key_up_circulation_store_datetime) {
+						upCirculationDatetime = item.value;
+					}
+                }
+
+				debugPrint("upCirculationTemperature  " + upCirculationTemperature);
+				debugPrint("upCirculationDatetime  " + upCirculationDatetime);
 
 				let now = Date(Date.now());
 				let diffsec = (now.valueOf() - upCirculationDatetime.valueOf()) / 1000;

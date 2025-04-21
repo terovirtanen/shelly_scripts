@@ -1,3 +1,4 @@
+// Switch heating element
 let CONFIG = {
 	em_ip: "192.168.100.100",
 	key_total: "EM_TOTAL",
@@ -198,6 +199,9 @@ let Heater = (function () {
 		// own produced solar power set max limit to higher
 		let max_temp = (solarStatus > 0) ? CONFIG.temp_max_solar : min_temp + CONFIG.temp_heating_increase;
 
+		debugPrint("action boilerDatetime : " + boilerDatetime);
+		debugPrint("action boilerTemperature : " + boilerTemperature);
+		debugPrint("action prevEmDatetime : " + prevEmDatetime);
 		debugPrint("action upCirculationTemperature : " + upCirculationTemperature);
 		debugPrint("action min_temp : " + min_temp);
 		debugPrint("action max_temp : " + max_temp);
@@ -224,11 +228,25 @@ let Heater = (function () {
 			"KVS.GetMany",
 			{ id: 0 },
 			function (result, error_code, error_message, user_data) {
-				prevEmTotalAct = result.items.EM_TOTAL.value;
-				prevEmTotalActRet = result.items.EM_TOTAL_RET.value;
-				prevEmDatetime = Date(result.items.EM_STORETIME.value);
-				boilerTemperature = result.items.BOILER_TEMPERATURE.value;
-				boilerDatetime = Date(result.items.BOILER_STORETIME.value);
+                for (let i = 0; i < result.items.length; i++) {
+                    let item = result.items[i];
+
+					if (item.key === CONFIG.key_total) {
+						prevEmTotalAct = item.value;
+					}
+					if (item.key === CONFIG.key_total_ret) {
+						prevEmTotalActRet = item.value;
+					}
+					if (item.key === CONFIG.key_total_store_datetime) {
+						prevEmDatetime = item.value;
+					}
+					if (item.key === CONFIG.key_boiler_temperature) {
+						boilerTemperature = item.value;
+					}
+					if (item.key === CONFIG.key_boiler_store_datetime) {
+						boilerDatetime = item.value;
+					}
+                }
 
 				action();
 			},

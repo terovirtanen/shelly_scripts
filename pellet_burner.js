@@ -15,6 +15,11 @@ let CONFIG = {
     burner_starting_limit_current: 1.0, 
     burner_running_limit_current: 0.1,     
 
+	key_boiler_temperature: "BOILER_TEMPERATURE",
+	key_boiler_store_datetime: "BOILER_STORETIME",
+	key_up_circulation_temperature: "UP_CIRCULATION_TEMPERATURE",
+	key_up_circulation_store_datetime: "UP_CIRCULATION_STORETIME",
+
 	debug: false,
 	dryrun: false,
 }
@@ -96,11 +101,22 @@ let BurnerHandler = (function () {
 			"KVS.GetMany",
 			{ id: 0 },
 			function (result, error_code, error_message, user_data) {
+                for (let i = 0; i < result.items.length; i++) {
+                    let item = result.items[i];
 
-				upCirculationTemperature = result.items.UP_CIRCULATION_TEMPERATURE.value;
-				upCirculationDatetime = Date(result.items.UP_CIRCULATION_STORETIME.value);
-				boilerTemperature = result.items.BOILER_TEMPERATURE.value;
-				boilerDatetime = Date(result.items.BOILER_STORETIME.value);
+					if (item.key === CONFIG.key_up_circulation_temperature) {
+						upCirculationTemperature = item.value;
+					}
+					if (item.key === CONFIG.key_up_circulation_store_datetime) {
+						upCirculationDatetime = item.value;
+					}
+					if (item.key === CONFIG.key_boiler_temperature) {
+						boilerTemperature = item.value;
+					}
+					if (item.key === CONFIG.key_boiler_store_datetime) {
+						boilerDatetime = item.value;
+					}
+                }
 
 				let now = Date(Date.now());
 
