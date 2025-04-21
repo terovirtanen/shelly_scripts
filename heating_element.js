@@ -238,13 +238,13 @@ let Heater = (function () {
 						prevEmTotalActRet = item.value;
 					}
 					if (item.key === CONFIG.key_total_store_datetime) {
-						prevEmDatetime = item.value;
+						prevEmDatetime = Date(item.value);
 					}
 					if (item.key === CONFIG.key_boiler_temperature) {
 						boilerTemperature = item.value;
 					}
 					if (item.key === CONFIG.key_boiler_store_datetime) {
-						boilerDatetime = item.value;
+						boilerDatetime = Date(item.value);
 					}
                 }
 

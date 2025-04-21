@@ -1,3 +1,4 @@
+// kierrätys pannu varaaja
 // 100 anturi varaaja alakierto
 // 101 anturi pannu
 
@@ -144,7 +145,7 @@ let TemperatureHandler = (function () {
 				debugPrint("upCirculationDatetime  " + upCirculationDatetime);
 
 				let now = Date(Date.now());
-				let diffsec = (now.valueOf() - upCirculationDatetime.valueOf()) / 1000;
+				let diffsec = (now.valueOf() - Date(upCirculationDatetime).valueOf()) / 1000;
 				// timestamp is older than 30 min (2* em measurement period), em data is outdated
 				if (diffsec > (60 * 5)) {
 					debugPrint("upCirculation Error: data outdated!");
