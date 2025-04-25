@@ -97,7 +97,11 @@ let Porssisahko = (function () {
                  priceData[dateInData][hour] = price.toString();
             }
         }
-        setKvs(CONFIG.key_porssisahko_today, priceData);
+        if (setTomorrow) {
+            setKvs(CONFIG.key_porssisahko_tomorrow, priceData);
+        } else {
+            setKvs(CONFIG.key_porssisahko_today, priceData);
+        }
 
 // {"2025-4-25":{"5":"10","4":"10","3":"10","2":"10","1":"10","0":"16"}}
 // lista, listan pituus on 24, 0-23
@@ -159,7 +163,7 @@ Shelly.emitEvent("query_porssisahko", {});
 // "0 0 7 * * MON-FRI" --> Run at 7:00 every working day;
 // "0 30 23 30 * *" --> Run at 23:30 every 30th day of month.
 let script_id = Shelly.getCurrentScriptId();
-print('Your Script ID is: ',script_id);
+// print('Your Script ID is: ',script_id);
 Shelly.call('Schedule.DeleteAll');
 Shelly.call('Schedule.Create', {enable: true, timespec: "0 0 18 * * *", calls: 
 	[

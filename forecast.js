@@ -166,7 +166,7 @@ Forecast.run();
 // "0 0 7 * * MON-FRI" --> Run at 7:00 every working day;
 // "0 30 23 30 * *" --> Run at 23:30 every 30th day of month.
 let script_id = Shelly.getCurrentScriptId();
-print('Your Script ID is: ',script_id);
+// print('Your Script ID is: ',script_id);
 Shelly.call('Schedule.DeleteAll');
 Shelly.call('Schedule.Create', {enable: true, timespec: "0 0 23 * * *", calls: 
 	[
