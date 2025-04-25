@@ -168,8 +168,11 @@ Forecast.run();
 let script_id = Shelly.getCurrentScriptId();
 print('Your Script ID is: ',script_id);
 Shelly.call('Schedule.DeleteAll');
-Shelly.call('Schedule.Create', {enable: true, timespec: "0 * * * * *", calls: 
+Shelly.call('Schedule.Create', {enable: true, timespec: "0 0 23 * * *", calls: 
 	[
 	  {method:"Script.Start", params:{id:script_id}}, 
 	]});
-
+Shelly.call('Schedule.Create', {enable: true, timespec: "0 2 23 * * *", calls: 
+	[
+	  {method:"Script.Stop", params:{id:script_id}}, 
+	]});
