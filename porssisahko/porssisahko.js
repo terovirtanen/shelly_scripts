@@ -143,10 +143,7 @@ Shelly.addEventHandler(
 		if (event_name === "query_porssisahko") {
             Porssisahko.run();
 		}
-		// store porssisahko data to KVS
-		// else if (event_name === "store_porssisahko") {
-        //     Porssisahko.store();
-        // }
+
 	},
 	null
 );
