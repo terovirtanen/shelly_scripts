@@ -8,6 +8,14 @@ let CONFIG = {
 
 let timerhanlde = null;
 
+let stopCounter = 0;
+// store 3 kvs value and exit script
+function stop() {
+	stopCounter++;
+	if (stopCounter > 2) {
+		Shelly.call('Script.Stop', {id: Shelly.getCurrentScriptId()});
+	}
+};
 //
 // A remote Shelly abstraction Call an RPC method on the remote Shelly
 let RemoteShelly = {
@@ -45,6 +53,7 @@ function setTotal(key, value) {
 		{ "key": key, "value": value },
 		function (result, error_code, error_message, user_data) {
 			// print(result);
+			stop();
 		},
 		null
 	);
@@ -127,7 +136,4 @@ let script_id = Shelly.getCurrentScriptId();
 // 	[
 // 	  {method:"Script.Start", params:{id:script_id}}, 
 // 	]});
-// Shelly.call('Schedule.Create', {enable: true, timespec: '30 */15 * * * *', calls: 
-// 	[
-// 	  {method:"Script.Stop", params:{id:script_id}}, 
-// 	]});
+
