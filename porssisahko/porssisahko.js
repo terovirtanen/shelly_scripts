@@ -4,10 +4,10 @@
 
 let CONFIG = {
 
-    url_porssisahko_net: "https://api.porssisahko.net/v1/latest-prices.json",
+    urlBase: "https://terovirtanen.arkku.net/porssisahko_shelly.php?date=",
 
-	key_porssisahko_today: "PORSSISAHKO_TODAY",
-    key_porssisahko_tomorrow: "PORSSISAHKO_TOMORROW",
+	key_today: "PORSSISAHKO_TODAY",
+    key_tomorrow: "PORSSISAHKO_TOMORROW",
 
     debug: false,
     
@@ -29,8 +29,7 @@ function stop() {
 	}
 };
 
-function setKvs(key, data) {
-    let value = JSON.stringify(data);
+function setKvs(key, value) {
     debugPrint(value);
 
 	Shelly.call(
@@ -45,9 +44,9 @@ function setKvs(key, data) {
 };
 
 // A remote Shelly abstraction Call an RPC method on the remote Shelly
-let PorssisahkoNet = {
+let PNet = {
 	_cb: function (result, error_code, error_message, callback) {
-        // debugPrint("PorssisahkoNet _cb");
+        // debugPrint("PNet _cb");
         // debugPrint(error_code);
         // debugPrint(error_message);
         // debugPrint(result);
@@ -56,18 +55,14 @@ let PorssisahkoNet = {
 		};
         //  debugPrint(result.code);
         //  debugPrint(result.message);
-		let rpcResult = result.body;
-		let rpcCode = result.code;
-		let rpcMessage = result.message;
-		callback(rpcResult, rpcCode, rpcMessage);
+
+		callback(result.body, result.code, result.message);
 	},
 
-	call: function (callback) {
-		let getData = {
-			url: CONFIG.url_porssisahko_net
-		};
-        // debugPrint("PorssisahkoNet call");
-		Shelly.call("HTTP.GET", getData, PorssisahkoNet._cb, callback);
+	call: function (day, callback) {
+		var url = {url: CONFIG.urlBase + day};
+        // debugPrint("PNet call");
+		Shelly.call("HTTP.GET", url, PNet._cb, callback);
 	},
 	getInstance: function () {
 		let rs = Object.create(this);
@@ -79,73 +74,37 @@ let PorssisahkoNet = {
 
 let Porssisahko = (function () {
 
-
-    function readPrices(data, setTomorrow) {
-        let priceData;
-        priceData = {};
-
-        let dateKey = new Date();
-        if (setTomorrow) {
-            dateKey = new Date(dateKey.valueOf() + 24 * 60 * 60 * 1000);
-        }
-        let dateInData = dateKey.getFullYear() + '-' + (dateKey.getMonth() + 1 ) + '-' + dateKey.getDate();
-
-        priceData[dateInData] = new Array(24);
-
-        for (let i = 0; i < data.prices.length; i++) {
-            let item = data.prices[i];
-            // startDate is in the UTC time, Date convert it to local time
-            // "startDate": "2025-04-24T05:00:00.000Z" -> 2025-04-24 08:00:00
-            let dateObj = new Date(item.startDate);
-            let date = dateObj.getFullYear() + '-' + (dateObj.getMonth() + 1 ) + '-' + dateObj.getDate();
-            let hour = dateObj.getHours();
-            let price = Math.min(99, Math.floor(parseFloat(item.price)));
-
-            if (date === dateInData){
-                 priceData[dateInData][hour] = price.toString();
-            }
-        }
-        if (setTomorrow) {
-            setKvs(CONFIG.key_porssisahko_tomorrow, priceData);
-        } else {
-            setKvs(CONFIG.key_porssisahko_today, priceData);
-        }
-
 // {"2025-4-25":{"5":"10","4":"10","3":"10","2":"10","1":"10","0":"16"}}
 // lista, listan pituus on 24, 0-23
 // {"2025-4-24":["10","10","10","10","10","16"]}
-
-    };
-
-    function getPorssisahko() {
-        let porssisahkoNet = PorssisahkoNet.getInstance();
+    function getToday() {
+        let porssisahkoNet = PNet.getInstance();
     
         porssisahkoNet.call(
-            
+            'today',
             function (body, code, message) {
-				debugPrint("PorssisahkoNet call back");
-                // debugPrint(body);
-				let data = JSON.parse (body, function (key, value) {
-					if (key === "price" || key === "startDate") {
-						return value; // Keep only the price and startDate fields
-					}
-					if (key === "" || Array.isArray(value) || typeof value === "object") {
-						return value; // Keep objects and arrays intact
-					}
-					return undefined; // Remove all other fields
-				});
+				debugPrint("PNet call back");
+				setKvs(CONFIG.key_today, body);
+            }
+        );
+    };
 
-				debugPrint("readPrices");
-                readPrices(data, false);
-                readPrices(data, true);
-
+    function getTomorrow() {
+        let porssisahkoNet = PNet.getInstance();
+    
+        porssisahkoNet.call(
+            'tomorrow',
+            function (body, code, message) {
+				debugPrint("PNet call back");
+				setKvs(CONFIG.key_tomorrow, body);
             }
         );
     };
 
     return { // public interface
 		run: function () {
-			getPorssisahko();
+			getToday();
+			getTomorrow();
 		},
 	};
 })();
@@ -159,11 +118,11 @@ Porssisahko.run();
 // "0 */2 1-4 * * *" --> Run every two minutes from 1 to 4 hours;
 // "0 0 7 * * MON-FRI" --> Run at 7:00 every working day;
 // "0 30 23 30 * *" --> Run at 23:30 every 30th day of month.
-// let script_id = Shelly.getCurrentScriptId();
 // print('Your Script ID is: ',script_id);
 /*
 Shelly.call('Schedule.DeleteAll');
-Shelly.call('Schedule.Create', {enable: true, timespec: "0 4 18 * * *", calls: 
+let script_id = Shelly.getCurrentScriptId();
+Shelly.call('Schedule.Create', {enable: true, timespec: "20 4 18 * * *", calls: 
 	[
 	  {method:"Script.Start", params:{id:script_id}}, 
 	]});

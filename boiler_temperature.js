@@ -7,7 +7,14 @@ let CONFIG = {
 
 let timerhanlde = null;
 
-//
+let stopCounter = 0;
+// store 2 kvs value and exit script
+function stop() {
+	stopCounter++;
+	if (stopCounter > 1) {
+		Shelly.call('Script.Stop', {id: Shelly.getCurrentScriptId()});
+	}
+};
 // A remote Shelly abstraction Call an RPC method on the remote Shelly
 let RemoteShelly = {
 	_cb: function (result, error_code, error_message, callback) {
@@ -44,6 +51,7 @@ function setTotal(key, value) {
 		{ "key": key, "value": value },
 		function (result, error_code, error_message, user_data) {
 			// print(result);
+			stop();
 		},
 		null
 	);
@@ -85,27 +93,37 @@ Shelly.addEventHandler(
 	null
 );
 
-function setTimer() {
-	let now = Date(Date.now());
-	let minutes = 15 - (now.getMinutes() % 15);// 15min välein 
-	let seconds = now.getSeconds(); // sekunnit 0:aan
+// function setTimer() {
+// 	let now = Date(Date.now());
+// 	let minutes = 15 - (now.getMinutes() % 15);// 15min välein 
+// 	let seconds = now.getSeconds(); // sekunnit 0:aan
 
-	// msec
-	let timercount = (minutes * 60 - seconds) * 1000;
+// 	// msec
+// 	let timercount = (minutes * 60 - seconds) * 1000;
 
-	Timer.clear(timerhanlde);
+// 	Timer.clear(timerhanlde);
 
-	return Timer.set(
-		timercount,
-		false,
-		function (user_data) {
-			Shelly.emitEvent("read_boiler_temperature", {});
-			timerhanlde = setTimer();
-		},
-		null
-	)
+// 	return Timer.set(
+// 		timercount,
+// 		false,
+// 		function (user_data) {
+// 			Shelly.emitEvent("read_boiler_temperature", {});
+// 			timerhanlde = setTimer();
+// 		},
+// 		null
+// 	)
 
-}
+// }
 
 Shelly.emitEvent("read_boiler_temperature", {});
-timerhanlde = setTimer();
+// timerhanlde = setTimer();
+let script_id = Shelly.getCurrentScriptId();
+// print('Your Script ID is: ',script_id);
+
+// Shelly.call('Schedule.DeleteAll');
+/*
+Shelly.call('Schedule.Create', {enable: true, timespec: '0 * * * * *', calls: 
+	[
+	  {method:"Script.Start", params:{id:script_id}}, 
+	]});
+	*/
