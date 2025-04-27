@@ -89,4 +89,20 @@ let PorssisahkoReader = (function () {
 	};
 })();
 
-PorssisahkoReader.run();
+Shelly.addEventHandler(
+	function (event, ud) {
+		if (!event || !event.info) {
+			return;
+		}
+		let event_name = event.info.event;
+		//  debugPrint(event_name);
+		// temperature has changed
+		if (event_name === "porssisahko_refresh") {
+			debugPrint("Porssisahko event!");
+            PorssisahkoReader.run();
+		}
+
+	},
+	null
+);
+

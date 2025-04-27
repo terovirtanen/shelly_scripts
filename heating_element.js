@@ -21,6 +21,12 @@ let CONFIG = {
 	boiler_stop_temperature: 40,
 	temp_boiler_increase: 10,
 
+	// porssisahko data
+	key_porssisahko_today: "PORSSISAHKO_TODAY",
+    key_porssisahko_tomorrow: "PORSSISAHKO_TOMORROW",
+    // price limit in cents
+    price_limit: 12,
+
 	debug: false,
 	dryrun: false,
 };
@@ -109,6 +115,52 @@ let Heater = (function () {
 
 	let boilerTemperature;
 	let boilerDatetime;
+
+	let priceData = {};
+
+    function getPorssisahkoKvsDateFormat() {
+        let dateKey = new Date();
+        let formattedDate = dateKey.getFullYear() + '-' + (dateKey.getMonth() + 1 ) + '-' + dateKey.getDate();
+
+        return formattedDate;
+    };
+    function porssisahkoIsOverLimit() {
+        let dateKey = getPorssisahkoKvsDateFormat();
+        let hour = new Date().getHours();
+        let price = priceData[dateKey][hour];
+        debugPrint("isUnderLimit: " + dateKey + " hour: " + hour + " price: " + price);
+        if (price === undefined || price === null) {
+            return false;
+        }
+        if (parseInt(price) > CONFIG.price_limit) {
+            return true;
+        }
+        return false;
+    };
+    function getPorssisahkoData() {
+        Shelly.call(
+			"KVS.GetMany",
+			{ id: 0, match: 'PORSSISAHKO_*' },
+			function (result, error_code, error_message, user_data) {
+                let val1 = {};
+                let val2 = {};
+                priceData = {};
+                for (let i = 0; i < result.items.length; i++) {
+                    let item = result.items[i];
+
+					if (item.key === CONFIG.key_porssisahko_today) {
+					    val1 = JSON.parse(item.value);
+					}
+					if (item.key === CONFIG.key_porssisahko_tomorrow) {
+					    val2 = JSON.parse(item.value);
+					}
+                }
+                
+                priceData = Object.assign({}, val1, val2);
+			},
+			null
+		);
+    };
 
 	// calculate energy meter power balance from recent measurement period
 	// return values
@@ -209,6 +261,10 @@ let Heater = (function () {
 		if (upCirculationTemperature < min_temp) {
 			switchVastus(true);
 		}
+		// porssisahko is high, set vastus off
+		else if (porssisahkoIsOverLimit()) {
+			switchVastus(false);
+		}
 		// over maximum limit, set heater off
 		else if (upCirculationTemperature > max_temp) {
 			switchVastus(false);
@@ -283,6 +339,7 @@ let Heater = (function () {
 	return { // public interface
 		init: function () {
 			solarPowerStatus = -2;
+			getPorssisahkoData();
 		},
 		refresh: function () {
 			callGetTemperature(CONFIG.anturi_id_ylakierto);
@@ -298,10 +355,13 @@ let Heater = (function () {
 			// debugPrint(result);
 			// debugPrint(LATEST_DATA);
 			// debugPrint(user_data);
-
+			
 			previousEmTotal();
 		},
-
+		porssisahko_refresh: function () {
+			getPorssisahkoData();
+		},
+		
 	};
 })();
 
@@ -320,6 +380,10 @@ Shelly.addEventHandler(
 		// temperature has changed
 		else if (event_name === "temperature_change") {
 			Heater.refresh();
+		}
+		// temperature has changed
+		else if (event_name === "porssisahko_refresh") {
+			Heater.porssisahko_refresh();
 		}
 	},
 	null

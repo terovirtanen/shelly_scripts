@@ -25,6 +25,7 @@ function stop() {
 	stopCounter++;
 	if (stopCounter > 1) {
 		debugPrint("Stop script!");
+		Shelly.emitEvent("porssisahko_refresh", {});
 		Shelly.call('Script.Stop', {id: Shelly.getCurrentScriptId()});
 	}
 };
