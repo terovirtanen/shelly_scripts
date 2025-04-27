@@ -3,7 +3,7 @@
 // burner controller
 let CONFIG = {
 	upCirculation_limit_high_temperature: 65, // kierron ylä lämpö yläraja -> yli, pellettipoltin pois päältä
-	upCirculation_limit_low_temperature: 51, // kierron ylä lämpö alaraja -> alle, pellettipoltin päälle
+	upCirculation_limit_low_temperature: 52, // kierron ylä lämpö alaraja -> alle, pellettipoltin päälle
 
 	upCirculation_limit_afternoon_temperature: 61, // kierron ylä lämpö iltapäivällä -> alle, pellettipoltin päälle, lämmitetään iltaa varten
 
@@ -19,6 +19,10 @@ let CONFIG = {
 	key_boiler_store_datetime: "BOILER_STORETIME",
 	key_up_circulation_temperature: "UP_CIRCULATION_TEMPERATURE",
 	key_up_circulation_store_datetime: "UP_CIRCULATION_STORETIME",
+
+	event_boiler_temperature: "boiler_temperature_changed",
+	event_up_circulation_temperature: "up_circulation_temperature_changed",
+
 
 	debug: false,
 	dryrun: false,
@@ -183,31 +187,37 @@ Shelly.addEventHandler(
 		if (event_name === "quaterly") {
 			BurnerHandler.refresh();
 		}
+		if (event_name === CONFIG.event_boiler_temperature) {
+			BurnerHandler.refresh();
+		}
+		if (event_name === CONFIG.event_up_circulation_temperature) {
+			BurnerHandler.refresh();
+		}
 	},
 	null
 );
 
-function setTimer() {
-	// let now = Date(Date.now());
-	// let minutes = 15 - (now.getMinutes() % 15);// 15min välein 
-	// let seconds = now.getSeconds(); // sekunnit 0:aan
+// function setTimer() {
+// 	// let now = Date(Date.now());
+// 	// let minutes = 15 - (now.getMinutes() % 15);// 15min välein 
+// 	// let seconds = now.getSeconds(); // sekunnit 0:aan
 
-	// // msec
-	// let timercount = (minutes * 60 - seconds) * 1000;
-	let timercount = 1000 * 60; // msec, 1min check  
+// 	// // msec
+// 	// let timercount = (minutes * 60 - seconds) * 1000;
+// 	let timercount = 1000 * 60 * 15; // msec, 1min check  
 
-	Timer.clear(timerhanlde);
+// 	Timer.clear(timerhanlde);
 
-	return Timer.set(
-		timercount,
-		false,
-		function (user_data) {
-			Shelly.emitEvent("quaterly", {});
-			timerhanlde = setTimer();
-		},
-		null
-	)
-}
+// 	return Timer.set(
+// 		timercount,
+// 		false,
+// 		function (user_data) {
+// 			Shelly.emitEvent("quaterly", {});
+// 			timerhanlde = setTimer();
+// 		},
+// 		null
+// 	)
+// }
 
-Shelly.emitEvent("manual", {});
-timerhanlde = setTimer();
+// Shelly.emitEvent("manual", {});
+// timerhanlde = setTimer();

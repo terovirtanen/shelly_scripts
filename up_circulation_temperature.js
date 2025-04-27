@@ -3,10 +3,25 @@ let CONFIG = {
 	up_circulation_temperature_id: 100,
 	key_up_circulation_temperature: "UP_CIRCULATION_TEMPERATURE",
 	key_up_circulation_store_datetime: "UP_CIRCULATION_STORETIME",
+
+	event_up_circulation_temperature: "up_circulation_temperature_changed",
 };
 
 let timerhanlde = null;
 
+let temperature_changed = false;
+let stopCounter = 0;
+// store 2 kvs value and exit script
+function stop() {
+	stopCounter++;
+	if (stopCounter > 1) {
+		if (temperature_changed) {
+			Shelly.emitEvent(CONFIG.event_up_circulation_temperature, {});
+		}
+
+		Shelly.call('Script.Stop', {id: Shelly.getCurrentScriptId()});
+	}
+};
 //
 // A remote Shelly abstraction Call an RPC method on the remote Shelly
 let RemoteShelly = {
@@ -44,6 +59,7 @@ function setTotal(key, value) {
 		{ "key": key, "value": value },
 		function (result, error_code, error_message, user_data) {
 			// print(result);
+			stop();
 		},
 		null
 	);
@@ -55,14 +71,20 @@ function datetimeNowToString() {
 	return datetime;
 };
 
-function read_up_circulation_temperature() {
+function read_up_circulation_temperature(previous_temperature) {
 	let emShelly = RemoteShelly.getInstance(CONFIG.heating_ip);
 
 	emShelly.call(
 		"Temperature.GetStatus",
 		{ id: CONFIG.up_circulation_temperature_id },
 		function (result, error_code, message) {
-			//   print(result);
+			// print(result);
+			// print(previous_temperature);
+			if (result !== undefined) {
+				if (result.tC !== previous_temperature) { 
+					temperature_changed = true;
+				}
+			}			//   print(result);
 			// print(result.total_act);
 			// print(result.total_act_ret);
 			setTotal(CONFIG.key_up_circulation_temperature, result.tC);
@@ -71,22 +93,22 @@ function read_up_circulation_temperature() {
 	);
 }
 
-Shelly.addEventHandler(
-	function (event, ud) {
-		if (!event || !event.info) {
-			return;
-		}
-		let event_name = event.info.event;
-		// print(event_name);
-		if (event_name === "read_up_circulation_temperature") {
-			read_up_circulation_temperature();
-		}
-	},
-	null
-);
+function previous_up_circulation_temperature() {
+	Shelly.call(
+		"KVS.Get",
+		{ id: 0, key: CONFIG.key_up_circulation_temperature},
+		function (result, error_code, error_message, user_data) {
+
+			read_up_circulation_temperature(result ? result.value : null);
+		},
+		null
+	);
+
+};
 
 function setTimer() {
-	let timercount = 1000 * 60; // msec, 1min check  
+	// msec, stop after 20s
+	let timercount = 20 * 1000;
 
 	Timer.clear(timerhanlde);
 
@@ -94,13 +116,19 @@ function setTimer() {
 		timercount,
 		false,
 		function (user_data) {
-			Shelly.emitEvent("read_up_circulation_temperature", {});
-			timerhanlde = setTimer();
+			stopCounter = 10;
+			stop();
 		},
 		null
 	)
 
 }
 
-Shelly.emitEvent("read_up_circulation_temperature", {});
+previous_up_circulation_temperature();
 timerhanlde = setTimer();
+/*
+Shelly.call('Schedule.Create', {enable: true, timespec: '30 * * * * *', calls: 
+	[
+	  {method:"Script.Start", params:{id: Shelly.getCurrentScriptId()}}, 
+	]});
+*/

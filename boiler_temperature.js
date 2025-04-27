@@ -3,15 +3,22 @@ let CONFIG = {
 	boiler_temperature_id: 101,
 	key_boiler_temperature: "BOILER_TEMPERATURE",
 	key_boiler_store_datetime: "BOILER_STORETIME",
+
+	event_boiler_temperature: "boiler_temperature_changed",
 };
 
 let timerhanlde = null;
 
+let temperature_changed = false;
 let stopCounter = 0;
 // store 2 kvs value and exit script
 function stop() {
 	stopCounter++;
 	if (stopCounter > 1) {
+		if (temperature_changed) {
+			Shelly.emitEvent(CONFIG.event_boiler_temperature, {});
+		}
+
 		Shelly.call('Script.Stop', {id: Shelly.getCurrentScriptId()});
 	}
 };
@@ -63,14 +70,23 @@ function datetimeNowToString() {
 	return datetime;
 };
 
-function read_boiler_temperature() {
+function read_boiler_temperature(previous_temperature) {
+	// print("read_boiler_temperature: ");
+	// print(previous_temperature);
+
 	let emShelly = RemoteShelly.getInstance(CONFIG.boiler_ip);
 
 	emShelly.call(
 		"Temperature.GetStatus",
 		{ id: CONFIG.boiler_temperature_id },
 		function (result, error_code, message) {
-			//   print(result);
+			// print(result);
+			// print(previous_temperature);
+			if (result !== undefined) {
+				if (result.tC !== previous_temperature) { 
+					temperature_changed = true;
+				}
+			}
 			// print(result.total_act);
 			// print(result.total_act_ret);
 			setTotal(CONFIG.key_boiler_temperature, result.tC);
@@ -79,19 +95,18 @@ function read_boiler_temperature() {
 	);
 }
 
-Shelly.addEventHandler(
-	function (event, ud) {
-		if (!event || !event.info) {
-			return;
-		}
-		let event_name = event.info.event;
-		// print(event_name);
-		if (event_name === "read_boiler_temperature") {
-			read_boiler_temperature();
-		}
-	},
-	null
-);
+function previous_boiler_temperature() {
+	Shelly.call(
+		"KVS.Get",
+		{ id: 0, key: CONFIG.key_boiler_temperature},
+		function (result, error_code, error_message, user_data) {
+
+			read_boiler_temperature(result ? result.value : null);
+		},
+		null
+	);
+
+};
 
 function setTimer() {
 	// msec, stop after 20s
@@ -111,7 +126,7 @@ function setTimer() {
 
 }
 
-Shelly.emitEvent("read_boiler_temperature", {});
+previous_boiler_temperature();
 timerhanlde = setTimer();
 // let script_id = Shelly.getCurrentScriptId();
 // print('Your Script ID is: ',script_id);
