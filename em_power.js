@@ -96,30 +96,26 @@ Shelly.addEventHandler(
 	null
 );
 
-// function setTimer() {
-// 	let now = Date(Date.now());
-// 	let minutes = 15 - (now.getMinutes() % 15);// 15min välein 
-// 	let seconds = now.getSeconds(); // sekunnit 0:aan
+function setTimer() {
+	// msec, stop after 20s
+	let timercount = 20 * 1000;
 
-// 	// msec
-// 	let timercount = (minutes * 60 - seconds) * 1000;
+	Timer.clear(timerhanlde);
 
-// 	Timer.clear(timerhanlde);
+	return Timer.set(
+		timercount,
+		false,
+		function (user_data) {
+			stopCounter = 10;
+			stop();
+		},
+		null
+	)
 
-// 	return Timer.set(
-// 		timercount,
-// 		false,
-// 		function (user_data) {
-// 			Shelly.emitEvent("read_em", {});
-// 			timerhanlde = setTimer();
-// 		},
-// 		null
-// 	)
-
-// }
+}
 
 Shelly.emitEvent("read_em", {});
-// timerhanlde = setTimer();
+timerhanlde = setTimer();
 
 //Cron Time Format, "* * * * * *" --> 1.*=second 2.*=minute 3.*=hour 4.*=day_Of_month 5.*=month 6.*=day_of_week
 //Cron Time Format, * = all, 1-4 --> from 1 to 4, /15 --> every 15, SUN-SAT support for day_of_week, JAN-DEC support for month
@@ -128,7 +124,7 @@ Shelly.emitEvent("read_em", {});
 // "0 */2 1-4 * * *" --> Run every two minutes from 1 to 4 hours;
 // "0 0 7 * * MON-FRI" --> Run at 7:00 every working day;
 // "0 30 23 30 * *" --> Run at 23:30 every 30th day of month.
-let script_id = Shelly.getCurrentScriptId();
+// let script_id = Shelly.getCurrentScriptId();
 // print('Your Script ID is: ',script_id);
 
 // Shelly.call('Schedule.DeleteAll');

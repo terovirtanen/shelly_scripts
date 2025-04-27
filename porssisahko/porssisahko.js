@@ -13,6 +13,7 @@ let CONFIG = {
     
 };
 
+let timerhanlde = null;
 let stopCounter = 0;
 
 function debugPrint(line) {
@@ -110,7 +111,26 @@ let Porssisahko = (function () {
 	};
 })();
 
+function setTimer() {
+	// msec, stop after 30s
+	let timercount = 30 * 1000;
+
+	Timer.clear(timerhanlde);
+
+	return Timer.set(
+		timercount,
+		false,
+		function (user_data) {
+			stopCounter = 10;
+			stop();
+		},
+		null
+	)
+
+}
+
 Porssisahko.run();
+timerhanlde = setTimer();
 
 //Cron Time Format, "* * * * * *" --> 1.*=second 2.*=minute 3.*=hour 4.*=day_Of_month 5.*=month 6.*=day_of_week
 //Cron Time Format, * = all, 1-4 --> from 1 to 4, /15 --> every 15, SUN-SAT support for day_of_week, JAN-DEC support for month

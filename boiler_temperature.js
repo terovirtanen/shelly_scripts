@@ -93,31 +93,27 @@ Shelly.addEventHandler(
 	null
 );
 
-// function setTimer() {
-// 	let now = Date(Date.now());
-// 	let minutes = 15 - (now.getMinutes() % 15);// 15min välein 
-// 	let seconds = now.getSeconds(); // sekunnit 0:aan
+function setTimer() {
+	// msec, stop after 20s
+	let timercount = 20 * 1000;
 
-// 	// msec
-// 	let timercount = (minutes * 60 - seconds) * 1000;
+	Timer.clear(timerhanlde);
 
-// 	Timer.clear(timerhanlde);
+	return Timer.set(
+		timercount,
+		false,
+		function (user_data) {
+			stopCounter = 10;
+			stop();
+		},
+		null
+	)
 
-// 	return Timer.set(
-// 		timercount,
-// 		false,
-// 		function (user_data) {
-// 			Shelly.emitEvent("read_boiler_temperature", {});
-// 			timerhanlde = setTimer();
-// 		},
-// 		null
-// 	)
-
-// }
+}
 
 Shelly.emitEvent("read_boiler_temperature", {});
-// timerhanlde = setTimer();
-let script_id = Shelly.getCurrentScriptId();
+timerhanlde = setTimer();
+// let script_id = Shelly.getCurrentScriptId();
 // print('Your Script ID is: ',script_id);
 
 // Shelly.call('Schedule.DeleteAll');
