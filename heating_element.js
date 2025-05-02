@@ -222,7 +222,7 @@ let Heater = (function () {
 
 	function getTempMin(timeNow, hour){
 		// use higher temperature active time 
-		let min_temp = (hour > 16 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
+		let min_temp = (hour > 17 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
 
 		// check is boiler stopped, set limit higher if boiler is stopped
 		let diffsec = (timeNow.valueOf() - boilerDatetime.valueOf()) / 1000;
