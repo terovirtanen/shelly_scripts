@@ -127,6 +127,10 @@ let Heater = (function () {
     function porssisahkoIsOverLimit() {
         let dateKey = getPorssisahkoKvsDateFormat();
         let hour = new Date().getHours();
+		if (!priceData[dateKey]) {
+            debugPrint("Error: dateKey not found in priceData.");
+            return false;
+        }
         let price = priceData[dateKey][hour];
         debugPrint("isUnderLimit: " + dateKey + " hour: " + hour + " price: " + price);
         if (price === undefined || price === null) {
