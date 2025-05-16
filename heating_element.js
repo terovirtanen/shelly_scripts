@@ -171,16 +171,19 @@ let Heater = (function () {
 	//  null: cannot calculate value
 	//  positive value: used more than produced
 	//  negative value: produced more than used
-	function emPowerUsageFromMeasurementPeriod(timeNow) {
+	function emPowerUsageFromMeasurementPeriod(diffsec) {
 		let powerSummary = null;
 		if (emTotalAct == null || prevEmTotalAct == null) {
 			debugPrint("emPower Error: no previous or current data!");
 			return powerSummary;
 		}
-		let diffsec = (timeNow.valueOf() - prevEmDatetime.valueOf()) / 1000;
 		// timestamp is older than 30 min (2* em measurement period), em data is outdated
 		if (diffsec > (60 * CONFIG.em_measurement_period * 2)) {
 			debugPrint("emPower Error: previous data outdated!");
+			return powerSummary;
+		}
+		else if (diffsec < (60 * 1)) {
+			debugPrint("Too earlier to calculate power usage!");
 			return powerSummary;
 		}
 
@@ -192,17 +195,20 @@ let Heater = (function () {
 	};
 
 	// return values
-	// -2 : energy meter previous values are not exixts on outdated, cannot use to switch heater
+	// -2 : energy meter previous values are not exists on outdated, cannot use to switch heater
 	// -1 :  not enough power produced on measurement period
 	// 0 : turn off, used more power than produced
 	// 1,2 : turn on, produced more power than used
 	function refreshSolarPowerStatus(timeNow) {
+		let diffsec = (timeNow.valueOf() - prevEmDatetime.valueOf()) / 1000;
 		// get power balance 
-		let powerSummary = emPowerUsageFromMeasurementPeriod(timeNow);
+		let powerSummary = emPowerUsageFromMeasurementPeriod(diffsec);
 		if (powerSummary == null) {
-			debugPrint("refreshSolarPowerStatus Error: no power usage from recent measurement period!");
-			// if previous check has been turn on, should set to stop first
-			solarPowerStatus = (solarPowerStatus > 0) ? 0 : -2;
+			if (diffsec > (60 * 1)) {
+				debugPrint("refreshSolarPowerStatus Error: no power usage from recent measurement period!");
+				// if previous check has been turn on, should set to stop first
+				solarPowerStatus = (solarPowerStatus > 0) ? 0 : -2;
+			}
 		}
 		// no solar power produced enough to calculate 
 		else if ((emTotalActRet - prevEmTotalActRet)  < CONFIG.power_limit) {
