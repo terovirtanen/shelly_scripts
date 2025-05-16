@@ -25,7 +25,7 @@ let CONFIG = {
 	key_porssisahko_today: "PORSSISAHKO_TODAY",
     key_porssisahko_tomorrow: "PORSSISAHKO_TOMORROW",
     // price limit in cents
-    price_limit: 12,
+    price_limit: 9,
 
 	debug: false,
 	dryrun: false,
