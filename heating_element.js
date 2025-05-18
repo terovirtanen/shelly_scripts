@@ -194,10 +194,6 @@ let Heater = (function () {
 		let powerUsed = emTotalAct - prevEmTotalAct;
 		let powerRet = emTotalActRet - prevEmTotalActRet;
 
-		// else if (diffsec < (60 * 1)) {
-		// 	debugPrint("Too earlier to calculate power usage!");
-		// 	return { validData, powerSummary };
-		// }
 		if ( powerUsed < CONFIG.power_limit && powerRet < CONFIG.power_limit) {
 			debugPrint("Not enough power used to make decision!");
 			return powerSummary;
@@ -229,12 +225,6 @@ let Heater = (function () {
 		if (powerSummary == null) {
 			debugPrint("valid data, but power summary cannot calculate!");
 		}
-		// // no solar power produced enough to calculate 
-		// else if ((emTotalActRet - prevEmTotalActRet)  < CONFIG.power_limit) {
-		// 	// if previous status has been turn on, should set to stop first
-		// 	// use slow mode, case measurement period has just changed 
-		// 	solarPowerStatus = (solarPowerStatus > 0) ? solarPowerStatus - 1 : -1;
-		// }
 		// used more power than produced from previous netto leveling
 		else if (powerSummary > CONFIG.power_limit) {
 			// use slow mode, case measurement period has just changed 
