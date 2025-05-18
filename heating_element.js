@@ -166,30 +166,44 @@ let Heater = (function () {
 		);
     };
 
+	function emPowerIsValidData(timeNow) {
+		let validData = true;
+		let diffsec = (timeNow.valueOf() - prevEmDatetime.valueOf()) / 1000;
+
+
+		if (emTotalAct == null || prevEmTotalAct == null) {
+			validData = false;
+			debugPrint("emPower Error: no previous or current data!");
+		}
+		// timestamp is older than 30 min (2* em measurement period), em data is outdated
+		if (diffsec > (60 * CONFIG.em_measurement_period * 2)) {
+			validData = false;
+			debugPrint("emPower Error: previous data outdated!");
+		}
+
+		return validData;
+	};
 	// calculate energy meter power balance from recent measurement period
 	// return values
 	//  null: cannot calculate value
 	//  positive value: used more than produced
 	//  negative value: produced more than used
-	function emPowerUsageFromMeasurementPeriod(diffsec) {
+	function emPowerUsageFromMeasurementPeriod() {
 		let powerSummary = null;
-		if (emTotalAct == null || prevEmTotalAct == null) {
-			debugPrint("emPower Error: no previous or current data!");
-			return powerSummary;
-		}
-		// timestamp is older than 30 min (2* em measurement period), em data is outdated
-		if (diffsec > (60 * CONFIG.em_measurement_period * 2)) {
-			debugPrint("emPower Error: previous data outdated!");
-			return powerSummary;
-		}
-		else if (diffsec < (60 * 1)) {
-			debugPrint("Too earlier to calculate power usage!");
+
+		let powerUsed = emTotalAct - prevEmTotalAct;
+		let powerRet = emTotalActRet - prevEmTotalActRet;
+
+		// else if (diffsec < (60 * 1)) {
+		// 	debugPrint("Too earlier to calculate power usage!");
+		// 	return { validData, powerSummary };
+		// }
+		if ( powerUsed < CONFIG.power_limit && powerRet < CONFIG.power_limit) {
+			debugPrint("Not enough power used to make decision!");
 			return powerSummary;
 		}
 
 		// calculate is power used or produced
-		let powerUsed = emTotalAct - prevEmTotalAct;
-		let powerRet = emTotalActRet - prevEmTotalActRet;
 		powerSummary = powerUsed - powerRet;
 		return powerSummary;
 	};
@@ -199,23 +213,28 @@ let Heater = (function () {
 	// -1 :  not enough power produced on measurement period
 	// 0 : turn off, used more power than produced
 	// 1,2 : turn on, produced more power than used
+	// powerSummary > 0 : used more power than produced
+	// powerSummary < 0 : produced more power than used
 	function refreshSolarPowerStatus(timeNow) {
-		let diffsec = (timeNow.valueOf() - prevEmDatetime.valueOf()) / 1000;
 		// get power balance 
-		let powerSummary = emPowerUsageFromMeasurementPeriod(diffsec);
+		let validData = emPowerIsValidData(timeNow);
+		if (!validData) {
+			debugPrint("refreshSolarPowerStatus Error: no power usage from recent measurement period!");
+			solarPowerStatus = -2;
+			return solarPowerStatus;
+		}
+
+		let powerSummary= emPowerUsageFromMeasurementPeriod();
+
 		if (powerSummary == null) {
-			if (diffsec > (60 * 1)) {
-				debugPrint("refreshSolarPowerStatus Error: no power usage from recent measurement period!");
-				// if previous check has been turn on, should set to stop first
-				solarPowerStatus = (solarPowerStatus > 0) ? 0 : -2;
-			}
+			debugPrint("valid data, but power summary cannot calculate!");
 		}
-		// no solar power produced enough to calculate 
-		else if ((emTotalActRet - prevEmTotalActRet)  < CONFIG.power_limit) {
-			// if previous status has been turn on, should set to stop first
-			// use slow mode, case measurement period has just changed 
-			solarPowerStatus = (solarPowerStatus > 0) ? solarPowerStatus - 1 : -1;
-		}
+		// // no solar power produced enough to calculate 
+		// else if ((emTotalActRet - prevEmTotalActRet)  < CONFIG.power_limit) {
+		// 	// if previous status has been turn on, should set to stop first
+		// 	// use slow mode, case measurement period has just changed 
+		// 	solarPowerStatus = (solarPowerStatus > 0) ? solarPowerStatus - 1 : -1;
+		// }
 		// used more power than produced from previous netto leveling
 		else if (powerSummary > CONFIG.power_limit) {
 			// use slow mode, case measurement period has just changed 
