@@ -1,0 +1,12 @@
+[
+  {
+    "fname": "boiler_temperature.js",
+    "title": "Read boiler temperature",
+    "description": "This script reads the boiler temperature."
+  },
+    {
+    "fname": "em_power.js",
+    "title": "Read energy manager power",
+    "description": "This script reads the power consumption from the energy manager."
+  }
+]

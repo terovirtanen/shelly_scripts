@@ -1,4 +1,6 @@
+// heating_element.js
 // Switch heating element
+// laitteen ip 192.168.100.101
 let CONFIG = {
 	em_ip: "192.168.100.100",
 	key_total: "EM_TOTAL",

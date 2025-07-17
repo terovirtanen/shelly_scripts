@@ -1,3 +1,4 @@
+// em_power.js
 let CONFIG = {
 	em_ip: "192.168.100.100",
 	key_total: "EM_TOTAL",

@@ -1,3 +1,4 @@
+// boiler_temperature.js
 let CONFIG = {
 	boiler_ip: "192.168.100.101",
 	boiler_temperature_id: 101,

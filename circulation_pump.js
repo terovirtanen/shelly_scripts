@@ -1,6 +1,8 @@
+// circulation_pump.js
 // kierrätys pannu varaaja
 // 100 anturi varaaja alakierto
 // 101 anturi pannu
+// laitteen ip 192.168.100.101
 
 let CONFIG = {
 	anturi_boiler_id: "101",
