@@ -1,11 +1,17 @@
 # shelly_scripts
 
-## Sähkön mittaus
+## Shelly library
+Aseta laitteeseen library poluksi
+https://raw.githubusercontent.com/terovirtanen/shelly_scripts/main/shelley_library_scripts.json
+
+## Shelly laitteet
+
+### Sähkön mittaus
 
 laite: Shelly Pro 3EM
 static ip: 192.168.100.100
 
-## Varaaja kierto
+### Varaaja kierto
 
 laite: Shelly plus 1
 static ip: 192.168.100.101
@@ -13,7 +19,7 @@ scripts:
  - circulation_pump
    - running
 
-## Varaaja vastus
+### Varaaja vastus
 
 laite: Shelly plus 1
 static ip: 192.168.100.102
@@ -27,7 +33,7 @@ scripts:
  - porssisahko/porssisahko.js
    - scheduled
 
-## Polttimen käyttö
+### Polttimen käyttö
 
 laite: Shelly PM 1
 static ip: 192.168.100.104
