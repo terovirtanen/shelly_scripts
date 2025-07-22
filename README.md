@@ -13,7 +13,7 @@ static ip: 192.168.100.100
 
 ### Varaaja kierto
 
-laite: Shelly plus 1
+laite: Shelly 1 Gen 3
 static ip: 192.168.100.101
 scripts:
  - circulation_pump
@@ -21,7 +21,7 @@ scripts:
 
 ### Varaaja vastus
 
-laite: Shelly plus 1
+laite: Shelly 1 Gen 3
 static ip: 192.168.100.102
 scripts:
  - heating_element.js

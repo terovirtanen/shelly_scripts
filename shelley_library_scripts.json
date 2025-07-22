@@ -4,9 +4,24 @@
     "title": "Read boiler temperature",
     "description": "This script reads the boiler temperature."
   },
-    {
+  {
+    "fname": "circulation_pump.js",
+    "title": "Run circulation pump",
+    "description": "Run circulation pump base on temperatures."
+  },
+  {
     "fname": "em_power.js",
     "title": "Read energy manager power",
     "description": "This script reads the power consumption from the energy manager."
+  },
+  {
+    "fname": "heating_element.js",
+    "title": "Control heating element",
+    "description": "Control heating element based on energy consumption and temperatures."
+  },
+  {
+    "fname": "porssisahko/porssisahko.js",
+    "title": "Read hour porssisahko prices",
+    "description": "Read porssisahko prices from the hour and control heating element based on it."
   }
 ]
