@@ -2,7 +2,7 @@
 
 ## Shelly library
 Aseta laitteeseen library poluksi
-https://raw.githubusercontent.com/terovirtanen/shelly_scripts/main/shelley_library_scripts.json
+https://raw.githubusercontent.com/terovirtanen/shelly_scripts/main/shelly_library_scripts.json
 
 ## Shelly laitteet
 
