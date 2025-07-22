@@ -16,7 +16,7 @@ static ip: 192.168.100.100
 laite: Shelly 1 Gen 3
 static ip: 192.168.100.101
 scripts:
- - circulation_pump
+ - circulation_pump.js
    - running
 
 ### Varaaja vastus
