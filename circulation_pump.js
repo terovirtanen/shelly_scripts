@@ -132,16 +132,18 @@ let TemperatureHandler = (function () {
 			"KVS.GetMany",
 			{ id: 0 },
 			function (result, error_code, error_message, user_data) {
-                for (let i = 0; i < result.items.length; i++) {
-                    let item = result.items[i];
+				upCirculationTemperature = result.items[CONFIG.key_up_circulation_temperature].value;
+				upCirculationDatetime = result.items[CONFIG.key_up_circulation_store_datetime].value;
+                // for (let i = 0; i < result.items.length; i++) {
+                //     let item = result.items[i];
 
-					if (item.key === CONFIG.key_up_circulation_temperature) {
-						upCirculationTemperature = item.value;
-					}
-					if (item.key === CONFIG.key_up_circulation_store_datetime) {
-						upCirculationDatetime = item.value;
-					}
-                }
+				// 	if (item.key === CONFIG.key_up_circulation_temperature) {
+				// 		upCirculationTemperature = item.value;
+				// 	}
+				// 	if (item.key === CONFIG.key_up_circulation_store_datetime) {
+				// 		upCirculationDatetime = item.value;
+				// 	}
+                // }
 
 				debugPrint("upCirculationTemperature  " + upCirculationTemperature);
 				debugPrint("upCirculationDatetime  " + upCirculationDatetime);
