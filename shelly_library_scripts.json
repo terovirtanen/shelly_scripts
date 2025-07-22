@@ -23,5 +23,11 @@
     "fname": "porssisahko/porssisahko.js",
     "title": "Read hour porssisahko prices",
     "description": "Read porssisahko prices from the hour and control heating element based on it."
+  },
+  {
+    "fname": "up_circulation_temperature.js",
+    "title": "Read up circulation temperature",
+    "description": "Read up circulation temperature."
   }
+
 ]

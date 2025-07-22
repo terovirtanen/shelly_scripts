@@ -18,6 +18,8 @@ static ip: 192.168.100.101
 scripts:
  - circulation_pump.js
    - running
+ - up_circulation_temperature.js
+   - scheduled
 
 ### Varaaja vastus
 
