@@ -28,6 +28,11 @@
     "fname": "up_circulation_temperature.js",
     "title": "Read up circulation temperature",
     "description": "Read up circulation temperature."
+  },
+  {
+    "fname": "circulation_pump_house.js",
+    "title": "Run circulation pump to house",
+    "description": "Run circulation pump to house based on temperatures."
   }
 
 ]
