@@ -4,6 +4,7 @@ let CONFIG = {
 	outside_temperature_id: 100,
 
 	limit: 15.0, // ulkolämpötilan raja, alle menee kierto päälle
+	limitNight: 3.0, // ulkolämpötilan raja yöllä, alle menee kierto päälle
 
 	debug: false,
 	dryrun: false,
@@ -18,6 +19,17 @@ function debugPrint(line) {
 		print(line);
 	}
 };
+
+function isNight() {
+	let now = Date(Date.now());
+	if (now.getHours() < 6 || now.getHours() > 22) {
+		return true;
+	}
+	return false;
+};
+
+
+
 // store 2 kvs value and exit script
 function stop() {
 	stopCounter++;
@@ -83,7 +95,10 @@ function get_outside_temperature() {
 			if (result !== undefined) {
 				let outside_temperature = result.tC;
 				debugPrint("outside temperature: " + outside_temperature);
-				if (outside_temperature < CONFIG.limit) {
+				if (isNight() && outside_temperature < CONFIG.limitNight) {
+					switchPump(true);
+				}
+				else if (outside_temperature < CONFIG.limit) {
 					switchPump(true);
 				}
 				else {
