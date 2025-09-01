@@ -3,8 +3,9 @@ let CONFIG = {
 	outside_ip: "192.168.100.20",
 	outside_temperature_id: 100,
 
-	limit: 15.0, // ulkolämpötilan raja, alle menee kierto päälle
-	limitNight: 3.0, // ulkolämpötilan raja yöllä, alle menee kierto päälle
+	limit: 14.0, // ulkolämpötilan raja, alle menee kierto päälle
+	limitEvening: 18.0, // ulkolämpötilan raja illalla, alle menee kierto päälle
+	limitNight: 5.0, // ulkolämpötilan raja yöllä, alle menee kierto päälle
 
 	debug: false,
 	dryrun: false,
@@ -28,7 +29,13 @@ function isNight() {
 	return false;
 };
 
-
+function isEvening() {
+	let now = Date(Date.now());
+	if (now.getHours() >= 18 && now.getHours() < 20) {
+		return true;
+	}
+	return false;
+};
 
 // store 2 kvs value and exit script
 function stop() {
@@ -95,10 +102,9 @@ function get_outside_temperature() {
 			if (result !== undefined) {
 				let outside_temperature = result.tC;
 				debugPrint("outside temperature: " + outside_temperature);
-				if (isNight() && outside_temperature < CONFIG.limitNight) {
-					switchPump(true);
-				}
-				else if (outside_temperature < CONFIG.limit) {
+				let limit = isNight() ? CONFIG.limitNight : CONFIG.limit;
+				limit = isEvening() ? CONFIG.limitEvening : limit;
+				if (outside_temperature < limit) {
 					switchPump(true);
 				}
 				else {
