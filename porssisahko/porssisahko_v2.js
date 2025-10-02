@@ -73,6 +73,7 @@ let PNet = {
 	},
 };
 
+let toKvs = {};
 let Porssisahko = (function () {
 
 //  porssisahko_shelly_v2.php return next 8 hours prices
@@ -92,9 +93,24 @@ let Porssisahko = (function () {
 						if (!hours.hasOwnProperty(hour)) continue;
 						let kvValue = {};
 						kvValue[date] = hours[hour];
-						setKvs(CONFIG.key_base + hour, kvValue);
+						toKvs[CONFIG.key_base + hour] = JSON.stringify(kvValue);
+						// setKvs(CONFIG.key_base + hour, JSON.stringify(kvValue));
 					}
 				}
+				let interval = Timer.set(1000, true, function (key, value) {
+					let keys = Object.keys(toKvs);
+					if (keys.length === 0) {
+						Timer.clear(interval);
+						return;
+					}
+					let key = keys[0];
+					let value = toKvs[key];
+					delete toKvs[key];
+					debugPrint("Timer interval");
+					debugPrint(key);
+					debugPrint(value);
+					setKvs(key, value);
+				}, null);
             }
         );
     };
@@ -135,11 +151,11 @@ timerhanlde = setTimer();
 // "0 0 7 * * MON-FRI" --> Run at 7:00 every working day;
 // "0 30 23 30 * *" --> Run at 23:30 every 30th day of month.
 // print('Your Script ID is: ',script_id);
-/*
-Shelly.call('Schedule.DeleteAll');
-let script_id = Shelly.getCurrentScriptId();
-Shelly.call('Schedule.Create', {enable: true, timespec: "20 4 18 * * *", calls: 
-	[
-	  {method:"Script.Start", params:{id:script_id}}, 
-	]});
-*/
+// /*
+// Shelly.call('Schedule.DeleteAll');
+// let script_id = Shelly.getCurrentScriptId();
+// Shelly.call('Schedule.Create', {enable: true, timespec: "0 5 */6 * * *", calls: 
+// 	[
+// 	  {method:"Script.Start", params:{id:script_id}}, 
+// 	]});
+//*/
