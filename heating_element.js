@@ -151,9 +151,10 @@ let Heater = (function () {
                 let val1 = {};
                 let val2 = {};
                 priceData = {};
-				val1 = JSON.parse(result.items[CONFIG.key_porssisahko_today].value);
-				val2 = JSON.parse(result.items[CONFIG.key_porssisahko_tomorrow].value);
-/*
+				// before version 1.5.0
+				// val1 = JSON.parse(result.items[CONFIG.key_porssisahko_today].value);
+				// val2 = JSON.parse(result.items[CONFIG.key_porssisahko_tomorrow].value);
+
 				for (let i = 0; i < result.items.length; i++) {
                     let item = result.items[i];
 
@@ -164,7 +165,7 @@ let Heater = (function () {
 					    val2 = JSON.parse(item.value);
 					}
                 }
-*/                
+                
                 priceData = Object.assign({}, val1, val2);
 			},
 			null
@@ -308,12 +309,13 @@ let Heater = (function () {
 			"KVS.GetMany",
 			{ id: 0 },
 			function (result, error_code, error_message, user_data) {
-				prevEmTotalAct = result.items[CONFIG.key_total].value;
-				prevEmTotalActRet = result.items[CONFIG.key_total_ret].value;
-				prevEmDatetime = Date(result.items[CONFIG.key_total_store_datetime].value);
-				boilerTemperature = result.items[CONFIG.key_boiler_temperature].value;
-				boilerDatetime = Date(result.items[CONFIG.key_boiler_store_datetime].value);
-/*	
+				// before version 1.5.0
+				// prevEmTotalAct = result.items[CONFIG.key_total].value;
+				// prevEmTotalActRet = result.items[CONFIG.key_total_ret].value;
+				// prevEmDatetime = Date(result.items[CONFIG.key_total_store_datetime].value);
+				// boilerTemperature = result.items[CONFIG.key_boiler_temperature].value;
+				// boilerDatetime = Date(result.items[CONFIG.key_boiler_store_datetime].value);
+	
                 for (let i = 0; i < result.items.length; i++) {
                     let item = result.items[i];
 
@@ -333,7 +335,7 @@ let Heater = (function () {
 						boilerDatetime = Date(item.value);
 					}
                 }
-*/
+
 				action();
 			},
 			null
