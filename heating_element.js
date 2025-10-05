@@ -148,7 +148,7 @@ let Heater = (function () {
 
         return formattedDate;
     };
-    function porssisahkoIsOverLimit() {
+    function porssisahkoIsOverLimit(priceLimit) {
         let dateKey = getPorssisahkoKvsDateFormat();
         let quarter = Math.floor(new Date().getMinutes() / 15);
 		if (!priceData[dateKey]) {
@@ -160,7 +160,7 @@ let Heater = (function () {
         if (price === undefined || price === null) {
             return false;
         }
-        if (parseInt(price) > CONFIG.price_limit) {
+        if (parseInt(price) > priceLimit) {
             return true;
         }
         return false;
@@ -256,7 +256,9 @@ let Heater = (function () {
 	function getTempMin(timeNow, hour){
 		// use higher temperature active time 
 		let min_temp = (hour > 17 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
-		if ((hour > 6 && hour < 21) && getForecastPower(timeNow) < CONFIG.forecast_power_limit) {
+		if ((hour > 6 && hour < 21) && 
+		    getForecastPower(timeNow) < CONFIG.forecast_power_limit && 
+			!porssisahkoIsOverLimit(1)) {
 			min_temp = CONFIG.temp_min_activetime;
 		}
 
@@ -298,7 +300,7 @@ let Heater = (function () {
 			switchVastus(true);
 		}
 		// porssisahko is high, set vastus off
-		else if (porssisahkoIsOverLimit()) {
+		else if (porssisahkoIsOverLimit(CONFIG.price_limit)) {
 			switchVastus(false);
 		}
 		// over maximum limit, set heater off
