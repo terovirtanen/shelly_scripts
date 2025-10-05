@@ -30,7 +30,7 @@
     "description": "Read porssisahko prices from the quarter and control heating element based on it."
   },
   {
-    "fname": "forecast.js",
+    "fname": "forecast/forecast.js",
     "title": "Read forecast power supply estimation to next date",
     "description": "Read forecast power supply estimation to next day"
   },

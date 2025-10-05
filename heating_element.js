@@ -23,6 +23,12 @@ let CONFIG = {
 	boiler_stop_temperature: 40,
 	temp_boiler_increase: 10,
 
+	forecast_power_max: "FORECAST_POWER_MAX",
+	forecast_power: "FORECAST_POWER",
+	forecast_store_datetime: "FORECAST_STORETIME",
+
+	forecast_power_limit: 30000, // (Wh) forecast power limit, under do not use solar power to heat
+
 	// porssisahko data
 	key_base: "PORSSISAHKO_",
 
@@ -120,6 +126,22 @@ let Heater = (function () {
 
 	let priceData = {};
 
+	let forecastPowerMax = -1;
+    let forecastPower = -1;
+    let forecastStoreDatetime = null;
+
+	function getForecastPower(timeNow) {
+		if (forecastStoreDatetime == null || 
+			forecastStoreDatetime.getDate() !== timeNow.getDate() || 
+			forecastStoreDatetime.getMonth() !== timeNow.getMonth() )
+		{
+			debugPrint("Forecast data is outdated!");
+			return -1;
+		}
+
+		return forecastPower;
+	}
+
     function getPorssisahkoKvsDateFormat() {
         let dateKey = new Date();
         let formattedDate = dateKey.getFullYear() + '-' + (dateKey.getMonth() + 1 ) + '-' + dateKey.getDate();
@@ -128,13 +150,13 @@ let Heater = (function () {
     };
     function porssisahkoIsOverLimit() {
         let dateKey = getPorssisahkoKvsDateFormat();
-        let hour = new Date().getHours();
+        let quarter = Math.floor(new Date().getMinutes() / 15);
 		if (!priceData[dateKey]) {
             debugPrint("Error: dateKey not found in priceData.");
             return false;
         }
-        let price = priceData[dateKey][hour];
-        debugPrint("isUnderLimit: " + dateKey + " hour: " + hour + " price: " + price);
+        let price = priceData[dateKey][quarter];
+        debugPrint("isUnderLimit: " + dateKey + " quarter: " + quarter + " price: " + price);
         if (price === undefined || price === null) {
             return false;
         }
@@ -234,6 +256,9 @@ let Heater = (function () {
 	function getTempMin(timeNow, hour){
 		// use higher temperature active time 
 		let min_temp = (hour > 17 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
+		if ((hour > 6 && hour < 21) && getForecastPower(timeNow) < CONFIG.forecast_power_limit) {
+			min_temp = CONFIG.temp_min_activetime;
+		}
 
 		// check is boiler stopped, set limit higher if boiler is stopped
 		let diffsec = (timeNow.valueOf() - boilerDatetime.valueOf()) / 1000;
@@ -320,6 +345,15 @@ let Heater = (function () {
 					if (item.key === CONFIG.key_boiler_store_datetime) {
 						boilerDatetime = Date(item.value);
 					}
+					if (item.key === CONFIG.forecast_power_max) {
+					    forecastPowerMax = item.value;                        
+					}
+					if (item.key === CONFIG.forecast_power) {
+					    forecastPower = item.value;
+					}
+                    if (item.key === CONFIG.forecast_store_datetime) {
+                        forecastStoreDatetime = Date(item.value);
+                    }					
                 }
 
 				action();
