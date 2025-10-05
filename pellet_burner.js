@@ -5,7 +5,7 @@ let CONFIG = {
 	upCirculation_limit_high_temperature: 65, // kierron ylä lämpö yläraja -> yli, pellettipoltin pois päältä
 	upCirculation_limit_low_temperature: 52, // kierron ylä lämpö alaraja -> alle, pellettipoltin päälle
 
-	upCirculation_limit_afternoon_temperature: 61, // kierron ylä lämpö iltapäivällä -> alle, pellettipoltin päälle, lämmitetään iltaa varten
+	upCirculation_limit_activetime_temperature: 61, // kierron ylä lämpö aktiivisena aikana -> alle, pellettipoltin päälle, lämmitetään iltaa varten
 
 	boiler_limit_low_temperature: 43, // pannun alalämpötila, kierron alaraja on 40
 
@@ -23,6 +23,11 @@ let CONFIG = {
 	event_boiler_temperature: "boiler_temperature_changed",
 	event_up_circulation_temperature: "up_circulation_temperature_changed",
 
+	forecast_power_max: "FORECAST_POWER_MAX",
+	forecast_power: "FORECAST_POWER",
+	forecast_store_datetime: "FORECAST_STORETIME",
+
+	forecast_power_limit: 30000, // (Wh) forecast power limit, under do not use solar power to heat
 
 	debug: false,
 	dryrun: false,
@@ -59,6 +64,33 @@ let BurnerHandler = (function () {
     let boilerTemperature; // -1 if outdated
 	let boilerDatetime;
 
+	let forecastPowerMax = -1;
+    let forecastPower = -1;
+    let forecastStoreDatetime = null;
+
+	function getForecastPower(timeNow) {
+		if (forecastStoreDatetime == null || 
+			forecastStoreDatetime.getDate() !== timeNow.getDate() || 
+			forecastStoreDatetime.getMonth() !== timeNow.getMonth() )
+		{
+			debugPrint("Forecast data is outdated!");
+			return -1;
+		}
+
+		return forecastPower;
+	}
+
+	function solarpowerForecast() {
+		let timeNow = new Date();
+		let forecast = getForecastPower(timeNow);
+
+		// Check if we can use solar power during day
+		if (forecast > CONFIG.forecast_power_limit) {
+			return true;
+		} 
+		return false;
+	}
+
     function running() {
         if (current_now > CONFIG.burner_running_limit_current) {
             return true;
@@ -66,20 +98,24 @@ let BurnerHandler = (function () {
         return false;
     };
 
-    function isAfternoon() {
+    function isActiveTime() {
         let hour = Date(Date.now()).getHours();
         if (hour > 17 && hour < 22) {
             return true;
+        }
+		// active time in morning and solar power not expected during day
+		if (hour > 6 && hour < 9 && !solarpowerForecast()) {
+			return true;
         }
         return false;
     };
 
     function action() {
 		debugPrint("Polttimen kytkentä/sammutus");
-        let afternoon = isAfternoon();
+        let activeTime = isActiveTime();
 
         // no temperature data, turn burner on just in case
-        if (upCirculationTemperature < 0 && afternoon) {
+        if (upCirculationTemperature < 0 && activeTime) {
             switchBurner(true);
         }
 		// boiler temperature is under limit
@@ -94,8 +130,8 @@ let BurnerHandler = (function () {
         else if (upCirculationTemperature < CONFIG.upCirculation_limit_low_temperature){
             switchBurner(true);
         }
-        // afternoon, limit is tighter
-        else if (afternoon && upCirculationTemperature < CONFIG.upCirculation_limit_afternoon_temperature){
+        // activeTime, limit is tighter
+        else if (activeTime && upCirculationTemperature < CONFIG.upCirculation_limit_activetime_temperature){
             switchBurner(true);
         };
     };
@@ -120,7 +156,17 @@ let BurnerHandler = (function () {
 					if (item.key === CONFIG.key_boiler_store_datetime) {
 						boilerDatetime = item.value;
 					}
-                }
+					if (item.key === CONFIG.forecast_power_max) {
+					    forecastPowerMax = item.value;                        
+					}
+					if (item.key === CONFIG.forecast_power) {
+					    forecastPower = item.value;
+					}
+                    if (item.key === CONFIG.forecast_store_datetime) {
+                        forecastStoreDatetime = Date(item.value);
+                    }					
+
+				}
 
 				let now = Date(Date.now());
 
