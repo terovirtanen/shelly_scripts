@@ -256,7 +256,7 @@ let Heater = (function () {
 	function getTempMin(timeNow, hour){
 		// use higher temperature active time 
 		let min_temp = (hour > 17 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
-		if ((hour > 6 && hour < 21) && 
+		if ((hour > 0 && hour < 21) && 
 		    getForecastPower(timeNow) < CONFIG.forecast_power_limit && 
 			!porssisahkoIsOverLimit(1)) {
 			min_temp = CONFIG.temp_min_activetime;
