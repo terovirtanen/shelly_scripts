@@ -150,10 +150,12 @@ timerhanlde = setTimer();
 // "0 */2 1-4 * * *" --> Run every two minutes from 1 to 4 hours;
 // "0 0 7 * * MON-FRI" --> Run at 7:00 every working day;
 // "0 30 23 30 * *" --> Run at 23:30 every 30th day of month.
-// print('Your Script ID is: ',script_id);
-// /*
-// Shelly.call('Schedule.DeleteAll');
 // let script_id = Shelly.getCurrentScriptId();
+// print('Your Script ID is: ',script_id);
+// // /*timespec: "0 5 */6 * * *", calls: 
+// // Shelly.call('Schedule.DeleteAll');
+// Shelly.call('Schedule.Delete', {id: script_id});
+// // every 6 hours at 5 minutes past the hour
 // Shelly.call('Schedule.Create', {enable: true, timespec: "0 5 */6 * * *", calls: 
 // 	[
 // 	  {method:"Script.Start", params:{id:script_id}}, 

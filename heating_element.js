@@ -24,8 +24,8 @@ let CONFIG = {
 	temp_boiler_increase: 10,
 
 	// porssisahko data
-	key_porssisahko_today: "PORSSISAHKO_TODAY",
-    key_porssisahko_tomorrow: "PORSSISAHKO_TOMORROW",
+	key_base: "PORSSISAHKO_",
+
     // price limit in cents
     price_limit: 9,
 
@@ -144,29 +144,15 @@ let Heater = (function () {
         return false;
     };
     function getPorssisahkoData() {
+        let hour = new Date().getHours();
         Shelly.call(
-			"KVS.GetMany",
-			{ id: 0, match: 'PORSSISAHKO_*' },
+			"KVS.Get",
+			{ id: 0, key: CONFIG.key_base + hour },
 			function (result, error_code, error_message, user_data) {
-                let val1 = {};
-                let val2 = {};
+                let value = result ? JSON.parse(result.value) : null;
                 priceData = {};
-				// before version 1.5.0
-				// val1 = JSON.parse(result.items[CONFIG.key_porssisahko_today].value);
-				// val2 = JSON.parse(result.items[CONFIG.key_porssisahko_tomorrow].value);
-
-				for (let i = 0; i < result.items.length; i++) {
-                    let item = result.items[i];
-
-					if (item.key === CONFIG.key_porssisahko_today) {
-					    val1 = JSON.parse(item.value);
-					}
-					if (item.key === CONFIG.key_porssisahko_tomorrow) {
-					    val2 = JSON.parse(item.value);
-					}
-                }
-                
-                priceData = Object.assign({}, val1, val2);
+                priceData = Object.assign({}, value);
+				previousEmTotal();
 			},
 			null
 		);
@@ -371,7 +357,7 @@ let Heater = (function () {
 	return { // public interface
 		init: function () {
 			solarPowerStatus = -2;
-			getPorssisahkoData();
+			// getPorssisahkoData();
 		},
 		refresh: function () {
 			callGetTemperature(CONFIG.anturi_id_ylakierto);
@@ -387,8 +373,8 @@ let Heater = (function () {
 			// debugPrint(result);
 			// debugPrint(LATEST_DATA);
 			// debugPrint(user_data);
-			
-			previousEmTotal();
+			// previousEmTotal();
+			getPorssisahkoData();			
 		},
 		porssisahko_refresh: function () {
 			getPorssisahkoData();
@@ -414,9 +400,9 @@ Shelly.addEventHandler(
 			Heater.refresh();
 		}
 		// temperature has changed
-		else if (event_name === "porssisahko_refresh") {
-			Heater.porssisahko_refresh();
-		}
+		// else if (event_name === "porssisahko_refresh") {
+		// 	Heater.porssisahko_refresh();
+		// }
 	},
 	null
 );
