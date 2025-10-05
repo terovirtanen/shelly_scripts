@@ -13,15 +13,25 @@ let CONFIG = {
 	forecast_power: "FORECAST_POWER",
 	forecast_store_datetime: "FORECAST_STORETIME",
 
-    debug: true,
+    debug: false,
     
 };
 
-let timerhanlde = null;
+let timerhandle = null;
+let stopCounter = 0;
 
 function debugPrint(line) {
 	if (CONFIG.debug) {
 		print(line);
+	}
+};
+
+// store 3 kvs value and exit script
+function stop() {
+	stopCounter++;
+	if (stopCounter > 2) {
+		debugPrint("Stop script!");
+		Shelly.call('Script.Stop', {id: Shelly.getCurrentScriptId()});
 	}
 };
 //
@@ -96,6 +106,7 @@ function setTotal(key, value) {
 		{ "key": key, "value": value },
 		function (result, error_code, error_message, user_data) {
 			// print(result);
+			stop();
 		},
 		null
 	);
@@ -123,10 +134,6 @@ let Forecast = (function () {
 				setTotal(CONFIG.forecast_power_max, data.powerMax);
 				setTotal(CONFIG.forecast_power, data.powerForecast);
 				setTotal(CONFIG.forecast_store_datetime, datetimeNowToString());
-				
-				let script_id = Shelly.getCurrentScriptId();
-				Shelly.call('Script.Stop', {id:script_id});
-
             }
         );
     };
@@ -156,7 +163,26 @@ let Forecast = (function () {
 	};
 })();
 
+function setTimer() {
+	// msec, stop after 120s
+	let timercount = 120 * 1000;
+
+	Timer.clear(timerhandle);
+
+	return Timer.set(
+		timercount,
+		false,
+		function (user_data) {
+			stopCounter = 10;
+			stop();
+		},
+		null
+	)
+
+}
+
 Forecast.run();
+timerhandle = setTimer();
 
 //Cron Time Format, "* * * * * *" --> 1.*=second 2.*=minute 3.*=hour 4.*=day_Of_month 5.*=month 6.*=day_of_week
 //Cron Time Format, * = all, 1-4 --> from 1 to 4, /15 --> every 15, SUN-SAT support for day_of_week, JAN-DEC support for month
@@ -165,14 +191,11 @@ Forecast.run();
 // "0 */2 1-4 * * *" --> Run every two minutes from 1 to 4 hours;
 // "0 0 7 * * MON-FRI" --> Run at 7:00 every working day;
 // "0 30 23 30 * *" --> Run at 23:30 every 30th day of month.
-let script_id = Shelly.getCurrentScriptId();
-// print('Your Script ID is: ',script_id);
-Shelly.call('Schedule.DeleteAll');
-Shelly.call('Schedule.Create', {enable: true, timespec: "0 0 23 * * *", calls: 
-	[
-	  {method:"Script.Start", params:{id:script_id}}, 
-	]});
-Shelly.call('Schedule.Create', {enable: true, timespec: "0 2 23 * * *", calls: 
-	[
-	  {method:"Script.Stop", params:{id:script_id}}, 
-	]});
+// let script_id = Shelly.getCurrentScriptId();
+// // print('Your Script ID is: ',script_id);
+// // Shelly.call('Schedule.DeleteAll');
+// Shelly.call('Schedule.Create', {enable: true, timespec: "0 0 23 * * *", calls: 
+// 	[
+// 	  {method:"Script.Start", params:{id:script_id}}, 
+// 	]});
+
