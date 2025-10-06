@@ -276,6 +276,14 @@ let Heater = (function () {
 
 		return min_temp;
 	};
+
+	function noSolarAndCheapPorssisahko(timeNow) {
+		if (getForecastPower(timeNow) < CONFIG.forecast_power_limit && 
+			!porssisahkoIsOverLimit(1)) {
+			return true
+		}
+		return false
+	}
 	
 	function action() {
 		let now = Date(Date.now());
@@ -286,8 +294,10 @@ let Heater = (function () {
 		// use higher temperature active time 
 		let min_temp = getTempMin(now, hour);
 
+		// no solar power expected during day and porssisahko is cheap, set heater on
+		let noSolarCheapPorssisahko = noSolarAndCheapPorssisahko(now);
 		// own produced solar power set max limit to higher
-		let max_temp = (solarStatus > 0) ? CONFIG.temp_max_solar : min_temp + CONFIG.temp_heating_increase;
+		let max_temp = (solarStatus > 0 || noSolarCheapPorssisahko) ? CONFIG.temp_max_solar : min_temp + CONFIG.temp_heating_increase;
 
 		debugPrint("action boilerDatetime : " + boilerDatetime);
 		debugPrint("action boilerTemperature : " + boilerTemperature);
@@ -306,6 +316,10 @@ let Heater = (function () {
 		// over maximum limit, set heater off
 		else if (upCirculationTemperature > max_temp) {
 			switchVastus(false);
+		}
+		// no solar power expected during day and porssisahko is cheap, set heater on
+		else if (noSolarCheapPorssisahko) { 
+			switchVastus(true);
 		}
 		// use solar power, set heater on
 		else if (solarStatus > 0) {
