@@ -18,6 +18,7 @@ let CONFIG = {
 	temp_min: 50,
 	temp_min_activetime: 55,
 	temp_max_solar: 75,
+	temp_max_porssisahko: 67,
 	temp_heating_increase: 2,
 	
 	boiler_stop_temperature: 40,
@@ -302,7 +303,8 @@ let Heater = (function () {
 		// no solar power expected during day and porssisahko is cheap, set heater on
 		let noSolarCheapPorssisahko = noSolarAndCheapPorssisahko(now);
 		// own produced solar power set max limit to higher
-		let max_temp = (solarStatus > 0 || noSolarCheapPorssisahko) ? CONFIG.temp_max_solar : min_temp + CONFIG.temp_heating_increase;
+		let max_temp_porssisahko = (noSolarCheapPorssisahko) ? CONFIG.temp_max_porssisahko : min_temp + CONFIG.temp_heating_increase;
+		let max_temp = (solarStatus > 0) ? CONFIG.temp_max_solar : max_temp_porssisahko;
 
 		debugPrint("action boilerDatetime : " + boilerDatetime);
 		debugPrint("action boilerTemperature : " + boilerTemperature);
