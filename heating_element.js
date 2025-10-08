@@ -34,6 +34,9 @@ let CONFIG = {
 
     // price limit in cents
     price_limit: 9,
+	// (cents) porssisahko needs to be equal or under this limit to use heater. 
+	// sähkönsiirto 8c/kWh
+	porssisahko_price_limit: -8,
 
 	debug: false,
 	dryrun: false,
@@ -256,9 +259,10 @@ let Heater = (function () {
 	function getTempMin(timeNow, hour){
 		// use higher temperature active time 
 		let min_temp = (hour > 17 && hour < 21) ? CONFIG.temp_min_activetime : CONFIG.temp_min;
+		let forecast = getForecastPower(timeNow);
 		if ((hour > 0 && hour < 21) && 
-		    getForecastPower(timeNow) < CONFIG.forecast_power_limit && 
-			!porssisahkoIsOverLimit(1)) {
+		    forecast > 0 && forecast < CONFIG.forecast_power_limit && 
+			!porssisahkoIsOverLimit(CONFIG.porssisahko_price_limit)) {
 			min_temp = CONFIG.temp_min_activetime;
 		}
 
@@ -278,8 +282,9 @@ let Heater = (function () {
 	};
 
 	function noSolarAndCheapPorssisahko(timeNow) {
-		if (getForecastPower(timeNow) < CONFIG.forecast_power_limit && 
-			!porssisahkoIsOverLimit(1)) {
+		let forecast = getForecastPower(timeNow);
+		if (forecast > 0 && forecast < CONFIG.forecast_power_limit && 
+			!porssisahkoIsOverLimit(CONFIG.porssisahko_price_limit)) {
 			return true
 		}
 		return false
@@ -307,26 +312,32 @@ let Heater = (function () {
 		debugPrint("action max_temp : " + max_temp);
 		// under minimum limit, set heater on
 		if (upCirculationTemperature < min_temp) {
+			debugPrint("Rule 1");
 			switchVastus(true);
 		}
 		// porssisahko is high, set vastus off
 		else if (porssisahkoIsOverLimit(CONFIG.price_limit)) {
+			debugPrint("Rule 2");
 			switchVastus(false);
 		}
 		// over maximum limit, set heater off
 		else if (upCirculationTemperature > max_temp) {
+			debugPrint("Rule 3");
 			switchVastus(false);
 		}
 		// no solar power expected during day and porssisahko is cheap, set heater on
 		else if (noSolarCheapPorssisahko) { 
+			debugPrint("Rule 4");
 			switchVastus(true);
 		}
 		// use solar power, set heater on
 		else if (solarStatus > 0) {
+			debugPrint("Rule 5");
 			switchVastus(true);
 		}
 		// no produced solar power, set heater off
 		else if (solarStatus == 0) {
+			debugPrint("Rule 6");
 			switchVastus(false);
 		}
 	};
