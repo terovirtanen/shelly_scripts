@@ -77,6 +77,7 @@ let TemperatureHandler = (function () {
 
 	let upCirculationTemperature; // -1 if outdated
 	let upCirculationDatetime;
+	let isRefreshRunning = false; // estää päällekkäiset refresh kutsut
 
 
 	function winterTime() {
@@ -124,7 +125,11 @@ let TemperatureHandler = (function () {
 		else if (boilerTemperature > downCirculationTemperature) {
 			debugPrint("Rule 6");
 			switchPump(true);
-		};
+		}
+		
+		// Merkitään refresh valmiiksi
+		isRefreshRunning = false;
+		debugPrint("TemperatureHandler refresh completed");
 	};
 
 	function readKvs() {
@@ -193,6 +198,15 @@ let TemperatureHandler = (function () {
 
 	return { // public interface
 		refresh: function () {
+			// Tarkista onko refresh jo käynnissä
+			if (isRefreshRunning) {
+				debugPrint("TemperatureHandler refresh already running, skipping...");
+				return;
+			}
+			
+			// Merkitään refresh käynnissä olevaksi
+			isRefreshRunning = true;
+			debugPrint("Starting TemperatureHandler refresh");
 			readTemperatureBoiler();
 		},
 	};
