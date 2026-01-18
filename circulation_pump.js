@@ -2,22 +2,27 @@
 // kierrätys pannu varaaja
 // 100 anturi varaaja alakierto
 // 101 anturi pannu
+// 102 anturi autotalli
 // laitteen ip 192.168.100.101
+// mqtt tulee konfiguroida erikseen shelly em:lle
 
 let CONFIG = {
+	anturi_garage_id: "102",	
 	anturi_boiler_id: "101",
 	anturi_boiler_name: "Pannu lämpötila",
 	anturi_downCirculation_id: "100",
 	anturi_downCirculation_name: "Varaaja alakierto lämpötila",
 	anturi_downCirculation_offset: 8.0,
-
+	
 	boiler_max_temperature: 75, // pannun max lämpö, ylitys -> kierto päälle
 	boiler_min_temperature: 40, // talviajan alaraja
 	downCirculation_max_temperature: 65, // kierron max lämpö -> ylitys kierto pois päältä
 	upCirculation_max_temperature: 72, // kierron ylä max lämpö -> ylitys kierto päälle päältä. case vastus lämmittää
-
+	
 	key_up_circulation_temperature: "UP_CIRCULATION_TEMPERATURE",
 	key_up_circulation_store_datetime: "UP_CIRCULATION_STORETIME",
+	
+	mqtt_topic_garage: "garage/temperature",
 
 	debug: false,
 	dryrun: false,
@@ -27,7 +32,14 @@ function debugPrint(line) {
 	if (CONFIG.debug) {
 		print(line);
 	}
-}
+};
+
+function datetimeNowToString() {
+	let now = Date(Date.now());
+	let datetime = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate() + 'T' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds();
+
+	return datetime;
+};
 
 function switchPump(activate) {
 	debugPrint("activate pump " + activate);
@@ -77,8 +89,19 @@ let TemperatureHandler = (function () {
 
 	let upCirculationTemperature; // -1 if outdated
 	let upCirculationDatetime;
-	let isRefreshRunning = false; // estää päällekkäiset refresh kutsut
 
+	let isRefreshRunning = false; // estää päällekkäiset refresh kutsut
+	let isRefreshGarageRunning = false; // estää päällekkäiset refresh kutsut
+
+	function publishTemperature(topic, value) {
+		if (!MQTT.isConnected()) {
+			debugPrint("MQTT ei ole yhdistettynä, julkaisu ohitetaan");
+			return;
+		}
+		let payload = JSON.stringify({ tC: value, ts: datetimeNowToString() });
+		MQTT.publish(topic, payload, 0, true);
+		debugPrint("Publish -> " + topic + ": " + payload);
+	}
 
 	function winterTime() {
 		let now = Date(Date.now());
@@ -195,8 +218,37 @@ let TemperatureHandler = (function () {
 		);
 	};
 
+	function readTemperatureGarage(doneCb) {
+		Shelly.call(
+			"Temperature.GetStatus",
+			{ id: CONFIG.anturi_garage_id },
+			function (result, error_code, error_message) {
+				if (error_code) {
+					debugPrint("Garage read error: " + error_code + ", " + error_message);
+					doneCb && doneCb(false);
+					return;
+				}
+				if (result && result.tC !== undefined) {
+                    publishTemperature(CONFIG.mqtt_topic_garage, result.tC);
+				}
+				doneCb && doneCb(true);
+			},
+			null
+		);
+	};
 
-	return { // public interface
+	let api = { // public interface
+		refreshGarage: function () {
+			if (isRefreshGarageRunning) {
+				return;
+			}
+			isRefreshGarageRunning = true;
+
+			// luetaan autotallin lämpötila ja julkaistaan se MQTT:lle
+			readTemperatureGarage(function () {
+                isRefreshGarageRunning = false;
+			});
+		},
 		refresh: function () {
 			// Tarkista onko refresh jo käynnissä
 			if (isRefreshRunning) {
@@ -210,6 +262,8 @@ let TemperatureHandler = (function () {
 			readTemperatureBoiler();
 		},
 	};
+
+	return api;
 })();
 
 setTemperatureComponent();
@@ -224,8 +278,17 @@ Shelly.addEventHandler(
 		// temperature has changed
 		if (event_name === "manual") {
 			TemperatureHandler.refresh();
+			TemperatureHandler.refreshGarage();
 		}
 		if (event_name === "temperature_change") {
+            let sensorId = event.info.id ||
+                            (event.info.component && event.info.component.split(":")[1]);
+            debugPrint("Temp change from sensor " + sensorId);
+
+            if (sensorId === CONFIG.anturi_garage_id) {
+				TemperatureHandler.refreshGarage();
+				return; // ignore garage sensor changes
+			}
 			TemperatureHandler.refresh();
 		}
 		if (event_name === "up_circulation_temperature") {

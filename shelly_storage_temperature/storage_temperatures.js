@@ -1,6 +1,7 @@
 // storage_temperatures.js
 // Lukee varaston ja ulkolämpötilat ja lähettää ne MQTT:lle
 // Anturit: 100 = ulko, 101 = varasto
+// mqtt tulee konfiguroida erikseen shelly:lle
 
 let CONFIG = {
 	sensor_outdoor_id: "100",
