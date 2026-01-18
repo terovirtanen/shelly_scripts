@@ -285,7 +285,7 @@ Shelly.addEventHandler(
                             (event.info.component && event.info.component.split(":")[1]);
             debugPrint("Temp change from sensor " + sensorId);
 
-            if (sensorId === CONFIG.anturi_garage_id) {
+            if (sensorId == CONFIG.anturi_garage_id) {
 				TemperatureHandler.refreshGarage();
 				return; // ignore garage sensor changes
 			}

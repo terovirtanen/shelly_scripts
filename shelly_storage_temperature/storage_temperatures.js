@@ -128,9 +128,9 @@ Shelly.addEventHandler(
                             (event.info.component && event.info.component.split(":")[1]);
             debugPrint("Temp change from sensor " + sensorId);
 
-            if (sensorId === CONFIG.sensor_outdoor_id) {
+            if (sensorId == CONFIG.sensor_outdoor_id) {
                 TemperatureMqtt.refreshOutdoor();
-            } else if (sensorId === CONFIG.sensor_storage_id) {
+            } else if (sensorId == CONFIG.sensor_storage_id) {
                 TemperatureMqtt.refreshStorage();
             } else {
                 // Tuntematon ID → halutessa luetaan molemmat
