@@ -98,7 +98,10 @@ let TemperatureHandler = (function () {
 			debugPrint("MQTT ei ole yhdistettynä, julkaisu ohitetaan");
 			return;
 		}
-		let payload = JSON.stringify({ tC: value, ts: datetimeNowToString() });
+		let key = datetimeNowToString();
+		let obj = {};
+		obj[key] = value;
+		let payload = JSON.stringify(obj);
 		MQTT.publish(topic, payload, 0, true);
 		debugPrint("Publish -> " + topic + ": " + payload);
 	}
