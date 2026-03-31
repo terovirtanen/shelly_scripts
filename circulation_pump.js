@@ -23,6 +23,8 @@ let CONFIG = {
 	key_up_circulation_store_datetime: "UP_CIRCULATION_STORETIME",
 	
 	mqtt_topic_garage: "garage/temperature",
+	mqtt_topic_boiler: "heating/boiler/temperature",
+	mqtt_topic_tank_down: "heating/tank/down/temperature",
 
 	debug: false,
 	dryrun: false,
@@ -202,6 +204,9 @@ let TemperatureHandler = (function () {
 				debugPrint(result.tC);
 				downCirculationTemperature = result.tC;
 				readKvs();
+				if (result && result.tC !== undefined) {
+                    publishTemperature(CONFIG.mqtt_topic_tank_down, result.tC);
+				}
 			},
 			null
 		);
@@ -216,6 +221,9 @@ let TemperatureHandler = (function () {
 				debugPrint(result.tC);
 				boilerTemperature = result.tC;
 				readTemperatureAlakierto();
+				if (result && result.tC !== undefined) {
+                    publishTemperature(CONFIG.mqtt_topic_boiler, result.tC);
+				}
 			},
 			null
 		);
