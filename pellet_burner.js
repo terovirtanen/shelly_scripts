@@ -29,6 +29,8 @@ let CONFIG = {
 
 	forecast_power_limit: 30000, // (Wh) forecast power limit, under do not use solar power to heat
 
+	mqtt_topic_boiler_running: "heating/boiler/running",
+
 	debug: false,
 	dryrun: false,
 }
@@ -53,6 +55,13 @@ function switchBurner(activate) {
 		{ id: 0, on: activate },
 		function (response, error_code, error_message) { }
 	);
+
+	if (!MQTT.isConnected()) {
+		debugPrint("MQTT ei ole yhdistettynä, julkaisu ohitetaan");
+		return;
+	}
+	MQTT.publish(CONFIG.mqtt_topic_boiler_running, String(activate), 0, true);
+	debugPrint("Publish -> " + CONFIG.mqtt_topic_boiler_running + ": " + activate);
 };
 
 let BurnerHandler = (function () {
