@@ -52,6 +52,13 @@ function debugPrint(line) {
 	}
 }
 
+function datetimeNowToString() {
+	let now = Date(Date.now());
+	let datetime = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate() + 'T' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds();
+
+	return datetime;
+};
+
 function setTemperatureComponent() {
 	Shelly.call(
 		"Temperature.SetConfig",
@@ -121,8 +128,8 @@ function switchVastus(activate) {
 		debugPrint("MQTT ei ole yhdistettynä, julkaisu ohitetaan");
 		return;
 	}
-	MQTT.publish(topic, activate, 0, true);
-	debugPrint("Publish -> " + topic + ": " + activate);
+	MQTT.publish(CONFIG.mqtt_topic_tank_resistance, String(activate), 0, true);
+	debugPrint("Publish -> " + CONFIG.mqtt_topic_tank_resistance + ": " + activate);
 };
 
 let Heater = (function () {
