@@ -39,6 +39,9 @@ let CONFIG = {
 	// sähkönsiirto 8c/kWh
 	porssisahko_price_limit: -8,
 
+	mqtt_topic_tank_up: "heating/tank/up/temperature",
+	mqtt_topic_tank_resistance: "heating/tank/resistance/running",
+
 	debug: false,
 	dryrun: false,
 };
@@ -114,6 +117,12 @@ function switchVastus(activate) {
 		{ id: 0, on: activate },
 		function (response, error_code, error_message) { }
 	);
+	if (!MQTT.isConnected()) {
+		debugPrint("MQTT ei ole yhdistettynä, julkaisu ohitetaan");
+		return;
+	}
+	MQTT.publish(topic, activate, 0, true);
+	debugPrint("Publish -> " + topic + ": " + activate);
 };
 
 let Heater = (function () {
@@ -133,6 +142,19 @@ let Heater = (function () {
 	let forecastPowerMax = -1;
     let forecastPower = -1;
     let forecastStoreDatetime = null;
+
+	function publishTemperature(topic, value) {
+		if (!MQTT.isConnected()) {
+			debugPrint("MQTT ei ole yhdistettynä, julkaisu ohitetaan");
+			return;
+		}
+		let key = datetimeNowToString();
+		let obj = {};
+		obj[key] = value;
+		let payload = JSON.stringify(obj);
+		MQTT.publish(topic, payload, 0, true);
+		debugPrint("Publish -> " + topic + ": " + payload);
+	}
 
 	function getForecastPower(timeNow) {
 		if (forecastStoreDatetime == null || 
@@ -411,6 +433,9 @@ let Heater = (function () {
 			function (result, error_code, error_message, user_data) {
 				upCirculationTemperature = result.tC;
 
+				if (result && result.tC !== undefined) {
+                    publishTemperature(CONFIG.mqtt_topic_tank_up, upCirculationTemperature);
+				}
 				//		debugPrint(result);
 				//		debugPrint(temp);
 				getEmTotal()
